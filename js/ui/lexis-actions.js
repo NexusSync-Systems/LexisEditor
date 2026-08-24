@@ -29,9 +29,22 @@
     // ================= REVIZE (#32) =================
 
     // Odstranění veškerého zvýraznění (background) z celého dokumentu.
-    // Rejstřík citované judikatury a zákonů — plánovaná funkce (zatím pahýl s poctivou hláškou).
+    // Rejstřík citací (table of authorities): posbírá unikátní citace (§ …, zákon č. …/… Sb.)
+    // z dokumentu a vloží číslovaný rejstřík na konec. Detekce = LexisLegalLinker.collectCitations.
     def('generateTableOfAuthorities', function () {
-        toast('Rejstřík citací — připravujeme.');
+        const q = quill(); if (!q) return;
+        const LL = window.LexisLegalLinker;
+        if (!LL || typeof LL.collectCitations !== 'function') { toast('Detekce citací není načtena.'); return; }
+        const target = (window.lexisUI && window.lexisUI.legalLinkTarget) || 'zakonyprolidi';
+        const items = LL.collectCitations(q.getText(), target);
+        if (!items.length) { toast('V dokumentu nebyly nalezeny žádné citace (§ …, zákon č. …/… Sb.).'); return; }
+        const at = q.getLength() - 1;
+        q.insertText(at, '\n\nRejstřík citací\n', 'user');
+        q.formatText(at + 2, 'Rejstřík citací'.length, { bold: true }, 'user');
+        items.forEach((it, i) => { q.insertText(q.getLength() - 1, (i + 1) + '. ' + it.citation + '\n', 'user'); });
+        if (window.lexisUI && window.lexisUI.saveActiveDocumentState) window.lexisUI.saveActiveDocumentState();
+        if (window.lexisUI && window.lexisUI.updateDocumentOutline) window.lexisUI.updateDocumentOutline();
+        toast('✅ Rejstřík citací vložen (' + items.length + ' položek).');
     });
 
     def('clearHighlights', function () {

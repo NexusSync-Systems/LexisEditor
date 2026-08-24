@@ -20,7 +20,11 @@
     "isds-test": "node scripts/isds-test.js",
     "build:react": "vite build",
     "watch:react": "vite build --watch",
-    "dist:signed": "CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac"
+    "dist:signed": "CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac",
+    "prestart": "npm run build:react",
+    "prepack": "npm run build:react",
+    "predist": "npm run build:react",
+    "predist:signed": "npm run build:react"
   },
   "build": {
     "appId": "com.lexiseditor.app",

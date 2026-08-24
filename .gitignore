@@ -24,3 +24,6 @@ lexis_settings.json
 .license-keys/
 **/license_private.pem
 lexis_license.json
+
+# generovaný React bundle (staví se přes build:react)
+js/react-islands.js

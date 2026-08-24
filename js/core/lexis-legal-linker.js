@@ -43,7 +43,25 @@
         return { html, count, changed: html !== text };
     }
 
-    const api = { linkifyLegalCitations, urlFor, CITATION_SRC, LAW_SRC };
+    // Posbírá UNIKÁTNÍ citace z prostého textu (pro Rejstřík citací / table of authorities).
+    // Vrací [{ citation, url }] seřazené česky. Stejný vzor jako linkifyLegalCitations.
+    function collectCitations(text, target) {
+        if (!text) return [];
+        const re = new RegExp('(' + CITATION_SRC + ')|(' + LAW_SRC + ')', 'gi');
+        const seen = new Set(); const out = [];
+        let m;
+        while ((m = re.exec(text)) !== null) {
+            const cit = m[0].replace(/\s+/g, ' ').trim();
+            if (!/\d/.test(cit)) continue;
+            const key = cit.toLowerCase();
+            if (seen.has(key)) continue;
+            seen.add(key); out.push(cit);
+        }
+        out.sort((a, b) => a.localeCompare(b, 'cs'));
+        return out.map((c) => ({ citation: c, url: urlFor(c, target) }));
+    }
+
+    const api = { linkifyLegalCitations, collectCitations, urlFor, CITATION_SRC, LAW_SRC };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (typeof window !== 'undefined') window.LexisLegalLinker = api;
 })();
