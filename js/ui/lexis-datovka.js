@@ -522,11 +522,12 @@
             <div style="font-size:12px; color:var(--text-2); margin-bottom:14px;"><b>${esc(event.title || 'Lhůta')}</b><br>${esc(cal.toIsoDate(event.date))}</div>
             <div style="display:flex; flex-direction:column; gap:8px;">
                 <button class="cal-btn" data-a="apple" style="padding:10px; border:1px solid #ddd6cb; background:var(--surface); border-radius:8px; cursor:pointer; font-size:13px; text-align:left;">  Apple / systémový kalendář (otevřít .ics)</button>
+                ${window.LEXIS_PILOT_LOCAL_ONLY ? '' : `
                 <button class="cal-btn" data-a="google" style="padding:10px; border:1px solid #ddd6cb; background:var(--surface); border-radius:8px; cursor:pointer; font-size:13px; text-align:left;">📆 Přidat do Google kalendáře</button>
-                <button class="cal-btn" data-a="outlook" style="padding:10px; border:1px solid #ddd6cb; background:var(--surface); border-radius:8px; cursor:pointer; font-size:13px; text-align:left;">📧 Přidat do Outlook kalendáře</button>
+                <button class="cal-btn" data-a="outlook" style="padding:10px; border:1px solid #ddd6cb; background:var(--surface); border-radius:8px; cursor:pointer; font-size:13px; text-align:left;">📧 Přidat do Outlook kalendáře</button>`}
                 <button class="cal-btn" data-a="save" style="padding:10px; border:1px solid #ddd6cb; background:var(--surface-2); border-radius:8px; cursor:pointer; font-size:12px; text-align:left; color:var(--text-2);">💾 Uložit soubor .ics (pro libovolný kalendář)</button>
             </div>
-            <div style="font-size:11px; color:var(--text-faint); margin-top:12px;">Data zůstávají u vás — odkaz jen předvyplní událost ve vašem kalendáři.</div>`, 460);
+            <div style="font-size:11px; color:var(--text-faint); margin-top:12px;">${window.LEXIS_PILOT_LOCAL_ONLY ? 'Data zůstávají u vás — soubor .ics se nikam neodesílá.' : 'Apple / .ics zůstává u vás. Google a Outlook předvyplní událost v prohlížeči — název a popis lhůty se odešlou danému poskytovateli.'}</div>`, 460);
         card.querySelector('#cal-close').onclick = () => closeOverlay(overlay);
         card.querySelectorAll('.cal-btn').forEach(btn => btn.onclick = async () => {
             const a = btn.getAttribute('data-a');

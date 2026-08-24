@@ -212,6 +212,20 @@ function createWindow() {
     });
 
     mainWindow.loadFile('index.html');
+
+    // Bezpečnost: hlavní okno se nesmí odnavigovat mimo appku (cizí .docx nebo
+    // vložený odkaz by jinak mohl přesměrovat renderer). Cizí http(s) odkazy
+    // otevřeme v systémovém prohlížeči, vše ostatní zablokujeme.
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        try { const u = new URL(url); if (u.protocol === 'https:' || u.protocol === 'http:') shell.openExternal(url); } catch (e) { /* ignore */ }
+        return { action: 'deny' };
+    });
+    mainWindow.webContents.on('will-navigate', (event, url) => {
+        if (url !== mainWindow.webContents.getURL()) {
+            event.preventDefault();
+            try { const u = new URL(url); if (u.protocol === 'https:' || u.protocol === 'http:') shell.openExternal(url); } catch (e) { /* ignore */ }
+        }
+    });
     // mainWindow.webContents.openDevTools();
 
     // --- Kontrola pravopisu (nativní Chromium spellchecker) --------------------
