@@ -1660,3 +1660,5 @@ body.dark-mode #security-settings-overlay [style*="color:#4f7a41"] { color: var(
     .start-main-scroll { overflow-y:visible; }
     .start-side { width:auto; border-right:none; border-bottom:1px solid var(--border); }
 }
+
+.recent-doc-row:hover { border-color: var(--accent); }

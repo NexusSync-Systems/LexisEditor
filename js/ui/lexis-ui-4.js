@@ -68,8 +68,7 @@ Object.assign(LexisUI.prototype, {
         
         try {
             const allDocs = await this.core.storage.getAll('documents');
-            recentList.innerHTML = eIco('');
-            
+
             // Filter out empty or template items, keep only actual user document records
             const userDocs = allDocs.filter(d => d && d.id && d.id.startsWith('doc_'));
 
@@ -77,6 +76,44 @@ Object.assign(LexisUI.prototype, {
             const cntEl = document.getElementById('start-doc-count');
             if (cntEl) { const n = userDocs.length; cntEl.textContent = n + ' ' + (n === 1 ? 'dokument' : (n >= 2 && n <= 4 ? 'dokumenty' : 'dokumentů')); }
 
+            // Sort by updatedAt descending
+            userDocs.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+            // Fáze 1 (strangler-fig): řádky kreslí React island. DŮLEŽITÉ: běží PŘED jakýmkoli
+            // recentList.innerHTML, aby vanilla čištění nesmazalo DOM pod React rootem (jinak se
+            // při návratu na úvodku nic nevykreslí a řádky se utrhnou mimo panel).
+            if (window.LexisReactIslands && typeof window.LexisReactIslands.mountRecentDocs === 'function') {
+                const stMap = { draft: 'Rozpracované', ai: 'Generované AI', review: 'Ke kontrole', final: 'Hotové' };
+                const vm = userDocs.filter((doc) => {
+                    if (filterType === 'all') return true;
+                    const noStatus = !doc.status || doc.status === 'none';
+                    return filterType === 'none' ? noStatus : doc.status === filterType;
+                }).map((doc) => {
+                    const dateStr = new Date(doc.updatedAt).toLocaleString('cs-CZ', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+                    const words = wordCount(doc.html);
+                    const subtitle = 'upraveno ' + dateStr + (words ? ' · ' + words.toLocaleString('cs-CZ') + ' slov' : '');
+                    let deadlineText = null, deadlineColor = null;
+                    if (doc.deadline) {
+                        const daysLeft = Math.ceil((new Date(doc.deadline.dueDate) - new Date()) / 86400000);
+                        deadlineColor = 'var(--accent-text)';
+                        deadlineText = 'lhůta ' + daysLeft + ' ' + (daysLeft === 1 ? 'den' : (daysLeft >= 2 && daysLeft <= 4 ? 'dny' : 'dní'));
+                        if (daysLeft < 0) { deadlineColor = '#c0553f'; deadlineText = 'lhůta zmeškána'; }
+                    }
+                    return { id: doc.id, title: doc.title, subtitle, statusLabel: stMap[doc.status] || null, deadlineText, deadlineColor };
+                });
+                window.LexisReactIslands.mountRecentDocs(recentList, {
+                    docs: vm,
+                    emptyText: userDocs.length ? 'Žádné dokumenty neodpovídají filtru.' : 'Zatím žádné dokumenty. Vytvořte nový dokument nebo vyberte šablonu vlevo.',
+                    onOpen: (id) => this.openRecentDocument(id),
+                    onDelete: (id) => (window.deleteRecentDocument ? window.deleteRecentDocument(id) : this.deleteRecentDocument(id)),
+                });
+                recentSection.style.display = 'block';
+                this.fetchInbox();
+                return;
+            }
+
+            // === Vanilla fallback (jen když React bundle není načtený) ===
+            recentList.innerHTML = eIco('');
             if (userDocs.length === 0) {
                 recentSection.style.display = 'block';
                 recentList.innerHTML = eIco(`
@@ -87,9 +124,6 @@ Object.assign(LexisUI.prototype, {
                 `);
                 return;
             }
-            
-            // Sort by updatedAt descending
-            userDocs.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
             
             let renderedCount = 0;
             

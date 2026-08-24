@@ -1,6 +1,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import AccountPanel from './AccountPanel.jsx';
+import RecentDocs from './RecentDocs.jsx';
 
 // Cache root per element — mountAccount lze volat opakovaně (po uložení profilu,
 // návratu na úvodku) a jen se re-renderuje místo vytváření nového rootu.
@@ -11,6 +12,7 @@ function rootFor(el) { let r = _roots.get(el); if (!r) { r = createRoot(el); _ro
 //   window.LexisReactIslands.mountAccount(el, { profile, level, onProfile, onSettings, onLock })
 window.LexisReactIslands = {
   mountAccount(el, props = {}) { if (!el) return; rootFor(el).render(React.createElement(AccountPanel, props)); },
+  mountRecentDocs(el, props = {}) { if (!el) return; rootFor(el).render(React.createElement(RecentDocs, props)); },
 };
 
 // Volitelný auto-mount pro statická data přes data-atribut (demo).
