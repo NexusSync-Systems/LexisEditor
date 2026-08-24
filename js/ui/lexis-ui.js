@@ -68,6 +68,7 @@ class LexisUI {
         this.loadAISettings();
         this.loadFeatureSettings();
         this.updateVersionDisplay();
+        this.updateAccountBlock();
         this.updateStats();
         this.initIdleTimer();
         this.initLexisLinkListeners();

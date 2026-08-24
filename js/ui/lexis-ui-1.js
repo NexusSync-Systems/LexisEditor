@@ -134,6 +134,84 @@ Object.assign(LexisUI.prototype, {
         }
     },
 
+    // Patička účtu na úvodní obrazovce: profil advokáta + aktuální úroveň (edice).
+    async updateAccountBlock() {
+        // Fáze 1 (strangler-fig): je-li načtený React island bundle, kreslí patičku React s živými daty.
+        try {
+            if (window.LexisReactIslands && typeof window.LexisReactIslands.mountAccount === 'function') {
+                const host = document.getElementById('start-account');
+                if (host) {
+                    let prof = {};
+                    try { prof = await this.readLawyerProfile(); } catch (e) {}
+                    const ed = (window.LexisEdition || window.Edition) || null;
+                    const level = (ed && ed.id) ? ed.id : 'full';
+                    window.LexisReactIslands.mountAccount(host, {
+                        profile: prof || {}, level,
+                        onProfile:  () => { if (window.showProfileModal) window.showProfileModal(); },
+                        onSettings: () => { if (this.openStartSettings) this.openStartSettings(); },
+                        onLock:     () => { if (this.lockApp) this.lockApp(); },
+                    });
+                    return;
+                }
+            }
+        } catch (e) { /* spadni na vanilla verzi níže */ }
+
+        // Vanilla fallback (když React bundle není načtený)
+        try {
+            const nameEl = document.getElementById('start-account-name');
+            if (!nameEl) return;
+            const firmEl = document.getElementById('start-account-firm');
+            const avatarEl = document.getElementById('start-avatar');
+            const levelText = document.getElementById('start-level-text');
+            const levelDot = document.getElementById('start-level-dot');
+
+            let prof = null;
+            try { prof = await this.readLawyerProfile(); } catch (e) {}
+            const fullName = (prof && (prof.name || '').trim()) || '';
+            const title = (prof && (prof.title || '').trim()) || '';
+            const firm = (prof && (prof.firm || '').trim()) || '';
+            const display = fullName ? ((title ? title + ' ' : '') + fullName) : '';
+
+            if (display) {
+                nameEl.textContent = display;
+                if (firmEl) firmEl.textContent = firm;
+                if (avatarEl) avatarEl.textContent = this._accountInitials(fullName);
+            } else {
+                nameEl.textContent = 'Nastavit profil';
+                if (firmEl) firmEl.textContent = '';
+                if (avatarEl) avatarEl.textContent = '+';
+            }
+
+            const ed = (typeof window !== 'undefined' && (window.LexisEdition || window.Edition)) || null;
+            const id = (ed && ed.id) ? ed.id : 'full';
+            const map = {
+                core:     { label: 'Základní',   dot: 'var(--text-faint)' },
+                legal:    { label: 'Legal',      dot: 'var(--accent)' },
+                business: { label: 'Business',   dot: 'var(--gold)' },
+                full:     { label: 'Plná verze', dot: 'var(--gold)' }
+            };
+            const lv = map[id] || map.full;
+            if (levelText) levelText.textContent = lv.label;
+            if (levelDot) levelDot.style.background = lv.dot;
+        } catch (e) { /* nikdy neblokovat úvodní obrazovku */ }
+    },
+
+    _accountInitials(name) {
+        const base = String(name || '').split(',')[0];
+        const clean = base.replace(/^((JUD|Mg|In)r\.|Bc\.|Ph\.?D\.?|MUDr\.|MDDr\.)\s*/gi, '').trim();
+        const parts = clean.split(/\s+/).filter(Boolean);
+        if (!parts.length) return '+';
+        if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    },
+
+    // Otevře Nastavení z úvodní obrazovky (odhalí aplikaci a přepne na záložku Nastavení).
+    openStartSettings() {
+        // Z úvodní obrazovky otevři Profil / hlavičkový papír (identita, logo, datová schránka).
+        // Plná nastavení (licence, zámek, AI) jsou v záložce Nastavení po otevření dokumentu.
+        try { if (window.showProfileModal) window.showProfileModal(); } catch (e) { /* neblokovat */ }
+    },
+
     loadDynamicTemplates() {
         if (!window.electronAPI || !window.electronAPI.getTemplates) return;
         const grid = document.getElementById('templates-grid');

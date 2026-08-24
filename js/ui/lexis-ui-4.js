@@ -55,6 +55,7 @@ Object.assign(LexisUI.prototype, {
             }
             
             this.renderRecentDocuments();
+            if (this.updateAccountBlock) this.updateAccountBlock();
         } catch (e) {
             console.error("Chyba při přechodu na úvodní obrazovku:", e);
         }
@@ -1244,7 +1245,7 @@ Object.assign(LexisUI.prototype, {
     },
 
     showProfileModal() {
-        this.checkEnterpriseFeature("Profil právníka", async () => {
+        (async () => {
             // Jeden zdroj čtení profilu (stejný jako pro hlavičku) — žádná duplicita.
             const s = await this.readLawyerProfile();
             const autoOn = s.auto !== false;
@@ -1262,6 +1263,8 @@ Object.assign(LexisUI.prototype, {
             modal.innerHTML = eIco(`
                 <h3 style="margin:0 0 6px 0;font-size:18px;color:#2b2926;font-weight:700; display:flex; align-items:center; gap:8px;">👤 Profil / hlavičkový papír</h3>
                 <p style="margin:0 0 18px 0; font-size:12px; color:#77716a;">Údaje se automaticky použijí jako hlavička (a podpis) na nových dokumentech.</p>
+                ${(!s.name && !s.firm) ? '<div style="margin:-8px 0 16px;"><button id="prof-fill-demo" type="button" style="background:none;border:none;color:#8a5320;font:600 12px Inter,sans-serif;cursor:pointer;padding:0;text-decoration:underline;">Vyplnit ukázkovými údaji (DNP Legal)</button></div>' : ''}
+                <div data-pack="legal" style="margin:-4px 0 16px;font-size:12px;color:#77716a;">Datová schránka (odesílání podání): <button id="prof-open-isds" type="button" style="background:none;border:none;color:#8a5320;font:600 12px Inter,sans-serif;cursor:pointer;padding:0;text-decoration:underline;">Nastavit připojení…</button></div>
 
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
                     ${fld('prof-title', 'Titul', s.title, 'Mgr. / JUDr.')}
@@ -1324,6 +1327,25 @@ Object.assign(LexisUI.prototype, {
                 reader.readAsDataURL(file);
             };
 
+            const isdsBtn = modal.querySelector('#prof-open-isds');
+            if (isdsBtn) isdsBtn.onclick = () => { try { if (window.openIsdsSettings) window.openIsdsSettings(); } catch(e){} };
+            const demoBtn = modal.querySelector('#prof-fill-demo');
+            if (demoBtn) demoBtn.onclick = () => {
+                const setV = (id, v) => { const el = modal.querySelector(id); if (el) el.value = v; };
+                setV('#prof-title', 'JUDr.');
+                setV('#prof-name', 'Zdeněk Dias, Ph.D.');
+                setV('#prof-firm', 'Dias, Novák & Partneři, advokátní kancelář s.r.o.');
+                setV('#prof-role', 'advokát (Managing Partner)');
+                setV('#prof-ico', '12345678');
+                setV('#prof-dic', 'CZ12345678');
+                setV('#prof-isds', 'ab1cde2');
+                setV('#prof-address', 'Karolinská 661/4, 186 00 Praha 8 - Karlín');
+                setV('#prof-tel', '+420 222 333 444');
+                setV('#prof-email', 'kancelar@dnplegal.cz');
+                setV('#prof-web', 'www.dnplegal.cz');
+                setV('#prof-city', 'Praze');
+                setV('#prof-sig', 'JUDr. Zdeněk Dias, Ph.D., advokát');
+            };
             modal.querySelector('#prof-cancel').onclick = () => document.body.removeChild(overlay);
             modal.querySelector('#prof-save').onclick = async () => {
                 const val = (id) => (modal.querySelector(id).value || '').trim();
@@ -1346,10 +1368,11 @@ Object.assign(LexisUI.prototype, {
                 await set('lawyer-letterhead-auto', !!modal.querySelector('#prof-auto').checked);
 
                 await this.loadLetterheadProfile(); // obnov cache, ať se hlavička hned projeví
+                if (this.updateAccountBlock) this.updateAccountBlock(); // obnov patičku účtu na úvodce
                 document.body.removeChild(overlay);
                 this.customAlert('✅ <b>Profil uložen.</b><br><br>Hlavička se automaticky vloží do nových dokumentů. Do už otevřeného dokumentu ji vložíš tlačítkem Vložit hlavičku.');
             };
-        });
+        })();
     },
 
     insertTOC() {

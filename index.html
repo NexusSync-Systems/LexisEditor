@@ -26,6 +26,7 @@
         }
     </script>
     
+    <link rel="stylesheet" href="css/tokens.css">
     <link rel="stylesheet" href="css/lexis-style.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Outfit:wght@400;600&family=Inter:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,700;1,400&family=Roboto+Slab&display=swap');
@@ -65,8 +66,7 @@
 
     <!-- Úvodní Rozcestník -->
     <div id="start-screen">
-        <div class=
-                    <div class="btn-icon" onclick="applyTypography()" title="Pevné (nezalomitelné) mezery: spisové značky, čísla jednací, jednopísmenné předložky, § a jednotky"><div class="icon-sq"><svg width="20" height="20" style="display:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h12M12 6v12M9 18h6"/></svg></div>Typografie</div>"start-shell">
+        <div class="start-shell">
             <!-- LEVÝ SLOUPEC: akce + šablony -->
             <aside class="start-side">
                 <div class="start-brand">
@@ -87,12 +87,31 @@
                 </button>
                 <div class="start-templates-label">ŠABLONY</div>
                 <div class="start-templates">
-                    <button class="start-tpl" onclick="openStartDocument('blank')">Žaloba na zaplacení</button>
-                    <button class="start-tpl" onclick="openStartDocument('blank')">Odvolání</button>
-                    <button class="start-tpl" onclick="openStartDocument('blank')">Výzva k plnění</button>
-                    <button class="start-tpl" onclick="openStartDocument('blank')">Smlouva o dílo</button>
+                    <button class="start-tpl" onclick="openStartDocument('zaloba')">Žaloba na zaplacení</button>
+                    <button class="start-tpl" onclick="openStartDocument('odvolani')">Odvolání</button>
+                    <button class="start-tpl" onclick="openStartDocument('vyzva')">Výzva k plnění</button>
+                    <button class="start-tpl" onclick="openStartDocument('smlouvaodilo')">Smlouva o dílo</button>
+                </div>
+                <div class="start-account" id="start-account">
+                    <div class="start-account-row" onclick="showProfileModal()" title="Otevřít profil advokáta">
+                        <div class="start-avatar" id="start-avatar">+</div>
+                        <div class="start-account-id">
+                            <div class="start-account-name" id="start-account-name">Nastavit profil</div>
+                            <div class="start-account-firm" id="start-account-firm"></div>
+                        </div>
+                        <button class="start-lock-btn" title="Nastavení" onclick="event.stopPropagation(); window.lexisUI.openStartSettings()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.8M12 17.7v2.8M20.5 12h-2.8M6.3 12H3.5M18 6l-2 2M8 16l-2 2M18 18l-2-2M8 8L6 6"/></svg></button>
+                        <button class="start-lock-btn" title="Zamknout aplikaci" onclick="event.stopPropagation(); window.lexisUI.lockApp()"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
+                    </div>
+                    <div class="start-level-row">
+                        <span class="start-level-badge"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6z"/></svg><span class="lv" id="start-level-text">Plná verze</span><span class="dot" id="start-level-dot"></span></span>
+                        <span class="start-level-manage" onclick="showProfileModal()">Spravovat</span>
+                    </div>
                 </div>
                 <div class="start-status" id="ll-status"><span class="start-dot" id="ll-dot" style="background:var(--text-faint)"></span><span id="ll-status-text">LexisLocal · zjišťuji stav…</span></div>
+                <div class="start-disclaimer">
+                    <span class="start-disclaimer-badge">⚖️ Upozornění — odpovědnost</span>
+                    LexisEditor a jeho AI funkce jsou pouze <strong>asistenční nástroj</strong>. Vygenerované koncepty, rešerše a návrhy jsou nezávazným podkladem — za jejich správnost, úplnost i za odeslání každého podání odpovídá <strong>výhradně advokát</strong>. Před použitím vždy zkontrolujte.
+                </div>
             </aside>
 
             <!-- PRAVÝ SLOUPEC: práce + doručeno -->
@@ -109,6 +128,7 @@
                     </div>
                 </div>
 
+                <div class="start-main-scroll">
                 <div id="recent-docs-section" class="start-docs" style="display: none;">
                     <div id="recent-docs-list"></div>
                 </div>
@@ -122,6 +142,7 @@
                     <div id="inbox-docs-list">
                         <div style="font-size: 12px; color: var(--text-faint); padding: 16px 2px;">Žádné nové spisy ke zpracování.</div>
                     </div>
+                </div>
                 </div>
             </main>
         </div>
@@ -426,6 +447,7 @@
                 <div class="icons">
                     <div class="btn-icon" onclick="insertArticle()"><div class="icon-sq"><svg width="20" height="20" style="display:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4.5"/></svg></div>Článek</div>
                     <div class="btn-icon" onclick="insertParagraph()"><div class="icon-sq"><svg width="20" height="20" style="display:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.4 7.4c0-1.7-1.1-2.9-2.6-2.9-1.6 0-2.7 1.1-2.7 2.5 0 3.4 6 3.2 6 7 0 1.4-1.1 2.6-2.7 2.6-1.5 0-2.6-1.1-2.6-2.7"/><path d="M14.4 12.6c0 1.7-1.1 2.9-2.6 2.9-1.6 0-2.7-1.1-2.7-2.5"/><path d="M9.6 16.6c0 1.4 1.1 2.9 2.7 2.9 1.5 0 2.6-1.2 2.6-2.6"/></svg></div>Paragraf</div>
+                    <div class="btn-icon" onclick="applyTypography()" title="Pevné (nezalomitelné) mezery: spisové značky, čísla jednací, jednopísmenné předložky, § a jednotky"><div class="icon-sq"><svg width="20" height="20" style="display:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6h12M12 6v12M9 18h6"/></svg></div>Typografie</div>
                 </div>
                 <div class="group-label">Právní číslování</div>
             </div>
@@ -1017,7 +1039,7 @@
                         <p style="font-size: 11px; color: #77716a; font-style: italic; text-align: center;">Žádné chyby nenalezeny. Spusťte hloubkovou kontrolu.</p>
                     </div>
                     <button onclick="runFinalAudit()" style="width:100%; padding:8px; background:var(--surface); border:1px solid var(--accent); color:var(--accent); border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; transition:all 0.2s; margin-bottom:5px;" onmouseover="this.style.background='var(--accent)'; this.style.color='var(--surface)';" onmouseout="this.style.background='var(--surface)'; this.style.color='var(--accent)';"><svg width="11" height="11" style="display:inline-block;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5v15M7 19.5h10"/><path d="M6 7.8l12-2.6"/><path d="M3 14l3-6.2L9 14a3 3 0 0 1-6 0zM15 12l3-6.2 3 6.2a3 3 0 0 1-6 0z"/></svg> Hloubkový audit</button>
-                    <button onclick="runLogicAudit()" style="width:100%; padding:8px; background:var(--surface); border:1px solid var(--accent); color:var(--accent-text); border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='var(--accent)'; this.style.color='var(--surface)';" onmouseout="this.style.background='var(--surface)'; this.style.color='var(--accent-text)';"><svg width="11" height="11" style="display:inline-block;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.2 5.4A2.7 2.7 0 0 0 5.6 8 2.8 2.8 0 0 0 4.8 13 2.9 2.9 0 0 0 9 18.4"/><path d="M9.2 5.4A2.3 2.3 0 0 1 12 7.6v9.6a2.4 2.4 0 0 1-3 2.2"/><path d="M14.8 5.4A2.7 2.7 0 0 1 18.4 8 2.8 2.8 0 0 1 19.2 13 2.9 2.9 0 0 1 15 18.4"/><path d="M14.8 5.4A2.3 2.3 0 0 0 12 7.6"/></svg> Kontrola logiky (AI)</button>
+                    <button onclick="runFinalAudit()" style="width:100%; padding:8px; background:var(--surface); border:1px solid var(--accent); color:var(--accent-text); border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='var(--accent)'; this.style.color='var(--surface)';" onmouseout="this.style.background='var(--surface)'; this.style.color='var(--accent-text)';"><svg width="11" height="11" style="display:inline-block;vertical-align:-2px;margin-right:6px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.2 5.4A2.7 2.7 0 0 0 5.6 8 2.8 2.8 0 0 0 4.8 13 2.9 2.9 0 0 0 9 18.4"/><path d="M9.2 5.4A2.3 2.3 0 0 1 12 7.6v9.6a2.4 2.4 0 0 1-3 2.2"/><path d="M14.8 5.4A2.7 2.7 0 0 1 18.4 8 2.8 2.8 0 0 1 19.2 13 2.9 2.9 0 0 1 15 18.4"/><path d="M14.8 5.4A2.3 2.3 0 0 0 12 7.6"/></svg> Kontrola logiky (AI)</button>
                     <button onclick="checkLanguage()" style="width:100%; padding:8px; margin-top:5px; background:var(--surface); border:1px solid var(--accent); color:var(--accent); border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='var(--accent)'; this.style.color='var(--surface)';" onmouseout="this.style.background='var(--surface)'; this.style.color='var(--accent)';">🔤 Jazyk — rychlá kontrola</button>
                     <button onclick="checkLanguageAI()" style="width:100%; padding:8px; margin-top:5px; background:var(--surface); border:1px solid var(--accent); color:var(--accent-text); border-radius:6px; font-size:11px; font-weight:700; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='var(--accent)'; this.style.color='var(--surface)';" onmouseout="this.style.background='var(--surface)'; this.style.color='var(--accent-text)';">✨ Spisovnost a sloh (AI, v kontextu)</button>
                 </div>
@@ -1308,6 +1330,7 @@
     <script src="js/ui/lexis-forward-client.js"></script>
     <script src="js/ui/lexis-mail-client.js"></script>
 
+    <script src="js/react-islands.js"></script>
     <script src="js/renderer-bootstrap.js"></script>
 
     <!-- Floating Exit Button for Reading Mode -->

@@ -15,6 +15,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     docxExtractText: (arrayBuffer) => ipcRenderer.invoke('docx-extract-text', arrayBuffer),
     searchAres: (ico) => ipcRenderer.invoke('search-ares', ico),
     getTemplates: () => ipcRenderer.invoke('get-templates'),
+    getTemplateContent: (type) => ipcRenderer.invoke('get-template-content', type),
     saveTemplate: (type, content) => ipcRenderer.invoke('save-template', type, content),
     resetTemplates: () => ipcRenderer.invoke('reset-templates'),
     getAppVersion: () => ipcRenderer.invoke('get-version'),

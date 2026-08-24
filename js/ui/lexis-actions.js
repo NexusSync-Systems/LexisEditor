@@ -29,6 +29,11 @@
     // ================= REVIZE (#32) =================
 
     // Odstranění veškerého zvýraznění (background) z celého dokumentu.
+    // Rejstřík citované judikatury a zákonů — plánovaná funkce (zatím pahýl s poctivou hláškou).
+    def('generateTableOfAuthorities', function () {
+        toast('Rejstřík citací — připravujeme.');
+    });
+
     def('clearHighlights', function () {
         const q = quill(); if (!q) return;
         const len = q.getLength();
