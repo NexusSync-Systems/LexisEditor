@@ -793,10 +793,32 @@ Object.assign(LexisUI.prototype, {
         if (!panel) {
             panel = document.createElement('div');
             panel.id = 'lexis-review-panel';
-            panel.style.cssText = 'position:fixed;top:70px;right:16px;width:320px;max-height:70vh;overflow:auto;background:#fff;border:1px solid #d9d3c8;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.15);z-index:9999;font-family:Inter,sans-serif;font-size:13px;color:#2b2926;';
+            panel.style.cssText = 'position:fixed;top:70px;right:16px;width:320px;max-height:70vh;overflow:auto;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.15);z-index:9999;font-family:var(--font-ui);font-size:13px;color:var(--ink);';
             document.body.appendChild(panel);
         }
         const items = this.core.listReviewItems ? this.core.listReviewItems() : [];
+
+        // Fáze 1 (strangler-fig): recenzní panel kreslí React island. Re-render po
+        // přijmout/odmítnout jde přes cached root (žádný innerHTML nad rootem).
+        if (window.LexisReactIslands && typeof window.LexisReactIslands.mountReviewPanel === 'function') {
+            const kindLabel = { ins: 'Vloženo', del: 'Smazáno', comment: 'Komentář' };
+            const vm = items.map((it) => ({
+                kind: it.kind,
+                author: it.author,
+                date: (it.date || '').split('T')[0],
+                color: this.core.authorColor ? this.core.authorColor(it.author) : '#666',
+                kindLabel: kindLabel[it.kind] || '',
+                snippet: String((it.kind === 'comment' ? it.commentText : it.text) || '').slice(0, 140),
+                ctx: it.kind === 'comment' ? ('„' + String(it.text || '').slice(0, 60) + '"') : '',
+                acceptLabel: it.kind === 'comment' ? 'Vyřešit' : 'Přijmout',
+            }));
+            window.LexisReactIslands.mountReviewPanel(panel, {
+                items: vm,
+                onResolve: (i, mode) => { this.core.resolveReviewItem(items[i], mode); this.renderReviewPanel(); },
+                onClose: () => { if (window.LexisReactIslands.unmount) window.LexisReactIslands.unmount(panel); panel.remove(); },
+            });
+            return;
+        }
         const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
         const kindLabel = { ins: 'Vloženo', del: 'Smazáno', comment: 'Komentář' };
         let html = '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #eee;font-weight:600;">Revize a komentáře (' + items.length + ')<span style="cursor:pointer;opacity:.6;" onclick="document.getElementById(\'lexis-review-panel\').remove()">✕</span></div>';
