@@ -1128,14 +1128,17 @@ Object.assign(LexisUI.prototype, {
 
     insertClause(type) {
         const clauses = {
+            'pravni_moc': "\n\nDoložka právní moci: Toto rozhodnutí nabylo právní moci dne ............ a je vykonatelné dne ............\n",
             'arbitration': "\n\nSmluvní strany se dohodly, že veškeré spory budou rozhodovány v rozhodčím řízení před Rozhodčím soudem při HK ČR a AK ČR.\n",
             'gdpr': "\n\nSmluvní strany berou na vědomí, že dochází ke zpracování osobních údajů v souladu s Nařízením GDPR.\n",
             'prorogation': "\n\nPro veškeré spory je místně příslušným soudem obecný soud zhotovitele.\n",
             'interest': "\n\nV případě prodlení s úhradou je dlužník povinen uhradit smluvní pokutu ve výši 0,05 % z dlužné částky za každý den prodlení.\n",
             'confidentiality': "\n\nSmluvní strany se zavazují zachovávat mlčenlivost o všech skutečnostech, které se dozvědí v souvislosti s touto smlouvou.\n"
         };
+        const text = clauses[type];
+        if (!text) { if (this.customAlert) this.customAlert('Tato doložka zatím není k dispozici.'); return; }
         const range = this.core.quill.getSelection(true);
-        this.core.quill.insertText(range.index, clauses[type]);
+        this.core.quill.insertText(range.index, text);
     },
 
     runFinalAudit() {

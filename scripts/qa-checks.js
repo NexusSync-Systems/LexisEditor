@@ -39,6 +39,18 @@ function findExternalResources(root) {
   return [...new Set([...html.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)].map(m=>m[1]))].sort();
 }
 module.exports = { findMissingElectronApi, findUnhandledIpc, findDuplicateIds, findExternalResources };
+// Typy doložek nabízené v menu (lexis-shell CLAUSES) musí existovat v mapě insertClause.
+function findClauseMismatch(root) {
+  const shell = fs.readFileSync(path.join(root,'js/core/lexis-shell.js'),'utf8');
+  const ui = fs.readFileSync(path.join(root,'js/ui/lexis-ui-1.js'),'utf8');
+  const cm = shell.match(/CLAUSES\s*=\s*\[([\s\S]*?)\]/);
+  const menu = cm ? [...cm[1].matchAll(/\[\s*'([a-z_]+)'/g)].map(m=>m[1]) : [];
+  const im = ui.match(/insertClause\(type\)\s*\{[\s\S]*?const clauses = \{([\s\S]*?)\};/);
+  const map = new Set(im ? [...im[1].matchAll(/'([a-z_]+)'\s*:/g)].map(m=>m[1]) : []);
+  return menu.filter(k => !map.has(k));
+}
+module.exports.findClauseMismatch = findClauseMismatch;
+
 
 if (require.main === module) {
   const root = path.join(__dirname,'..');
@@ -48,5 +60,6 @@ if (require.main === module) {
   rep('IPC kanály s handlerem', findUnhandledIpc(root));
   rep('žádné duplicitní id', findDuplicateIds(root));
   rep('žádné externí zdroje (offline)', findExternalResources(root));
+  rep('doložky menu ⊆ insertClause', findClauseMismatch(root));
   process.exit(fail ? 1 : 0);
 }

@@ -25,3 +25,9 @@ describe('integrita index.html', () => {
     expect(qa.findExternalResources(root)).toEqual([]);
   });
 });
+
+describe('konzistence doložek', () => {
+  test('každý typ doložky v menu existuje v insertClause', () => {
+    expect(qa.findClauseMismatch(root)).toEqual([]);
+  });
+});

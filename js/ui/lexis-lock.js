@@ -24,11 +24,11 @@ class LexisLock {
         if (!window.electronAPI) return; // Fallback: není Electron
 
         // Načti konfiguraci
-        this._config = await window.electronAPI.lockGetConfig();
+        this._config = (await window.electronAPI.lockGetConfig()) || {};
 
         // Zjisti Touch ID dostupnost
         const tRes = await window.electronAPI.lockTouchIdAvailable();
-        this._touchIdAvailable = tRes.available;
+        this._touchIdAvailable = !!(tRes && tRes.available);
 
         if (this._config.enabled) {
             this.showLockScreen();
