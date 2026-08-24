@@ -80,6 +80,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Auto-token LexisLocal backendu (čte main z ~/.lexislocal/api_token). Bez něj → 401.
     lexisLocalToken: (() => { try { return ipcRenderer.sendSync('get-lexislocal-token-sync') || ''; } catch (e) { return ''; } })(),
     getLexisLocalToken: () => { try { return ipcRenderer.sendSync('get-lexislocal-token-sync') || ''; } catch (e) { return ''; } },
+    // Edice z licence (main má get-license-edition-sync). Bez mostu se edice nečte → padá na výchozí.
+    licenseEdition: (() => { try { return ipcRenderer.sendSync('get-license-edition-sync') || ''; } catch (e) { return ''; } })(),
     // --- EXTRAKCE TEXTU Z PŘÍLOHY (PDF) pro náležitosti odpovědi ---
     extractFileText: (filePath) => ipcRenderer.invoke('extract-file-text', filePath),
     // --- KONTROLA PRAVOPISU (Chromium spellchecker) ---
