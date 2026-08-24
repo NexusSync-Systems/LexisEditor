@@ -103,7 +103,7 @@ const LexisAIProvider = async (prompt, systemPrompt = "Jste špičkový český 
 
                 const headers = { "Content-Type": "application/json" };
                 // Token: ruční klíč má přednost, jinak auto z lokálního souboru (přes preload).
-                const llToken = apiKey || (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.lexisLocalToken) || "";
+                const llToken = apiKey || (typeof window !== 'undefined' && window.electronAPI && ((window.electronAPI.getLexisLocalToken && window.electronAPI.getLexisLocalToken()) || window.electronAPI.lexisLocalToken)) || "";
                 if (llToken) {
                     headers["X-API-Token"] = llToken;
                 }

@@ -447,10 +447,12 @@ Object.assign(LexisUI.prototype, {
         }
     },
 
-    async deleteCustomClause(id) {
-        if (!confirm('Opravdu chcete smazat tuto vlastní doložku?')) return;
-        await this.core.storage.delete('clauses', id);
-        this.loadCustomClauses();
+    deleteCustomClause(id) {
+        this.customConfirm('Opravdu chcete smazat tuto vlastní doložku?', 'Smazat', 'Zrušit', async (ok) => {
+            if (!ok) return;
+            await this.core.storage.delete('clauses', id);
+            this.loadCustomClauses();
+        });
     },
 
     async saveSelectedAsClause() {
@@ -473,23 +475,23 @@ Object.assign(LexisUI.prototype, {
             return;
         }
 
-        const clauseName = prompt('Zadejte název pro novou vlastní doložku:');
-        if (!clauseName || !clauseName.trim()) return;
-
-        try {
-            await this.core.storage.set('clauses', {
-                id: Date.now().toString(),
-                name: clauseName.trim(),
-                text: selectedText,
-                createdAt: new Date().toISOString()
-            });
-            
-            this.customAlert(`✅ <b>Doložka uložena</b><br><br>Doložka "<b>${clauseName}</b>" byla úspěšně uložena do lokální databáze IndexedDB.`);
-            this.loadCustomClauses();
-        } catch (e) {
-            console.error("Chyba při ukládání doložky:", e);
-            this.customAlert("❌ <b>Chyba ukládání</b><br><br>Nepodařilo se uložit doložku do databáze IndexedDB.");
-        }
+        this.customPrompt('Zadejte název pro novou vlastní doložku:', '', async (clauseName) => {
+            if (!clauseName || !clauseName.trim()) return;
+            try {
+                await this.core.storage.set('clauses', {
+                    id: Date.now().toString(),
+                    name: clauseName.trim(),
+                    text: selectedText,
+                    createdAt: new Date().toISOString()
+                });
+                const safeName = window.escapeHTML ? window.escapeHTML(clauseName.trim()) : clauseName.trim();
+                this.customAlert(`✅ <b>Doložka uložena</b><br><br>Doložka "<b>${safeName}</b>" byla úspěšně uložena do lokální databáze IndexedDB.`);
+                this.loadCustomClauses();
+            } catch (e) {
+                console.error("Chyba při ukládání doložky:", e);
+                this.customAlert("❌ <b>Chyba ukládání</b><br><br>Nepodařilo se uložit doložku do databáze IndexedDB.");
+            }
+        });
     },
 
     triggerCloudSync() {

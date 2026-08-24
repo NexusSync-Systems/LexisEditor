@@ -133,18 +133,22 @@
     // Export přes html-to-docx i nativní OOXML, import z Wordu zachová tabulky.
     def('insertTable', function () {
         const q = quill(); if (!q) return;
-        const spec = prompt('Rozměr tabulky (řádky × sloupce), např. 3x3:', '3x3');
-        if (spec === null) return;
-        const m = String(spec).match(/(\d+)\s*[x×*]\s*(\d+)/);
-        let rows = m ? parseInt(m[1], 10) : 3;
-        let cols = m ? parseInt(m[2], 10) : 3;
-        rows = Math.max(1, Math.min(rows, 50));
-        cols = Math.max(1, Math.min(cols, 12));
-        const grid = Array.from({ length: rows }, () => Array.from({ length: cols }, () => ''));
         const range = q.getSelection(true);
         const index = range ? range.index : q.getLength();
-        q.insertEmbed(index, 'table', { rows: grid }, 'user');
-        q.setSelection(index + 1, 0);
+        const doInsert = (spec) => {
+            if (spec === null || spec === undefined) return;
+            const m = String(spec).match(/(\d+)\s*[x×*]\s*(\d+)/);
+            let rows = m ? parseInt(m[1], 10) : 3;
+            let cols = m ? parseInt(m[2], 10) : 3;
+            rows = Math.max(1, Math.min(rows, 50));
+            cols = Math.max(1, Math.min(cols, 12));
+            const grid = Array.from({ length: rows }, () => Array.from({ length: cols }, () => ''));
+            q.insertEmbed(index, 'table', { rows: grid }, 'user');
+            q.setSelection(index + 1, 0);
+        };
+        const u = window.lexisUI;
+        if (u && u.customPrompt) u.customPrompt('Rozměr tabulky (řádky × sloupce), např. 3x3:', '3x3', doInsert);
+        else doInsert(prompt('Rozměr tabulky (řádky × sloupce), např. 3x3:', '3x3'));
     });
 
     // ================= ZOBRAZENÍ (#34) =================

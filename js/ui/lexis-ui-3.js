@@ -525,7 +525,7 @@ Object.assign(LexisUI.prototype, {
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
                 } catch (e) {
-                    alert("Chyba při stahování metadat: " + e.message);
+                    if (window.lexisUI && window.lexisUI.customAlert) window.lexisUI.customAlert("Chyba při stahování metadat: " + e.message); else alert("Chyba při stahování metadat: " + e.message);
                 }
             };
 
@@ -1482,7 +1482,7 @@ Lokální právní textový procesor s integrovaným AI asistentem, napojením n
 
         const headers = { "Content-Type": "application/json" };
         // Token: ruční klíč má přednost, jinak auto z lokálního souboru (přes preload).
-        const llToken = apiKey || (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.lexisLocalToken) || "";
+        const llToken = apiKey || (typeof window !== 'undefined' && window.electronAPI && ((window.electronAPI.getLexisLocalToken && window.electronAPI.getLexisLocalToken()) || window.electronAPI.lexisLocalToken)) || "";
         if (llToken) {
             headers["X-API-Token"] = llToken;
         }

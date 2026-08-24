@@ -780,9 +780,11 @@ Object.assign(LexisUI.prototype, {
             this.customAlert('Nejdřív označ text, ke kterému chceš přidat komentář.');
             return;
         }
-        const text = prompt('Komentář:');
-        if (text === null) return;
-        this.core.insertComment(text);
+        this.customPrompt('Komentář:', '', (text) => {
+            if (text === null) return;
+            this.core.quill.setSelection(range.index, range.length, 'silent');
+            this.core.insertComment(text);
+        });
     },
 
     // Recenzní panel: seznam změn a komentářů s autorem/časem, barvami dle autora

@@ -100,10 +100,13 @@ Object.assign(LexisUI.prototype, {
         const contact = all.find(c => c.id === id);
         if (!contact) return;
 
-        if (!confirm(`Opravdu smazat kontakt "${contact.jmeno}"?`)) return;
-        await this._getContacts().delete(id);
-        await this.renderContactsList();
-        await this._renderContactGroupFilter();
+        const safeJmeno = window.escapeHTML ? window.escapeHTML(contact.jmeno) : contact.jmeno;
+        this.customConfirm(`Opravdu smazat kontakt "${safeJmeno}"?`, 'Smazat', 'Zrušit', async (ok) => {
+            if (!ok) return;
+            await this._getContacts().delete(id);
+            await this.renderContactsList();
+            await this._renderContactGroupFilter();
+        });
     },
 
     async insertContactToDoc(id) {

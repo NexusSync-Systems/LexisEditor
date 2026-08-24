@@ -77,6 +77,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // --- ŠIFROVÁNÍ BLOBŮ pro localStorage at-rest (synchronní) ---
     secureEncrypt: (s) => { try { return ipcRenderer.sendSync('secure-encrypt-sync', s); } catch (e) { return null; } },
     secureDecrypt: (b) => { try { return ipcRenderer.sendSync('secure-decrypt-sync', b); } catch (e) { return null; } },
+    // Auto-token LexisLocal backendu (čte main z ~/.lexislocal/api_token). Bez něj → 401.
+    lexisLocalToken: (() => { try { return ipcRenderer.sendSync('get-lexislocal-token-sync') || ''; } catch (e) { return ''; } })(),
+    getLexisLocalToken: () => { try { return ipcRenderer.sendSync('get-lexislocal-token-sync') || ''; } catch (e) { return ''; } },
     // --- EXTRAKCE TEXTU Z PŘÍLOHY (PDF) pro náležitosti odpovědi ---
     extractFileText: (filePath) => ipcRenderer.invoke('extract-file-text', filePath),
     // --- KONTROLA PRAVOPISU (Chromium spellchecker) ---
