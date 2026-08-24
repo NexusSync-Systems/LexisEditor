@@ -8,6 +8,18 @@ const LexisAIProvider = async (prompt, systemPrompt = "Jste špičkový český 
     // Deklarováno ve scope funkce (ne v try) — jinak by odkaz v catch bloku
     // (offline fallback) házel ReferenceError a fallback by se nikdy nespustil.
     let enableOfflineFallback = true;
+
+    // Pilotní zámek: externí (cloudová) AI je kvůli advokátní mlčenlivosti vypnutá.
+    // Běží PŘED hlavním try, aby chybu nespolkl offline fallback. Přepínač: window.LEXIS_PILOT_LOCAL_ONLY.
+    {
+        const _provEl = document.getElementById('ai-provider');
+        let _prov = _provEl && _provEl.value;
+        if (!_prov) { try { _prov = (JSON.parse(localStorage.getItem('lexis_ai_settings') || '{}')).provider; } catch (e) {} }
+        if (typeof window !== 'undefined' && window.LEXIS_PILOT_LOCAL_ONLY === true && ['openai', 'anthropic', 'google', 'deepseek'].indexOf(_prov) !== -1) {
+            if (window.lexisUI && window.lexisUI.customAlert) window.lexisUI.customAlert('🔒 <b>Pilotní režim — jen lokální AI</b><br><br>Externí poskytovatel <b>' + _prov + '</b> je kvůli advokátní mlčenlivosti vypnutý. Vyber v Nastavení → AI lokální model (LexisLocal, Ollama, LM Studio).');
+            throw new Error('Pilotní režim: externí AI je vypnutá (mlčenlivost).');
+        }
+    }
     try {
         let provider = "ollama";
         let model = "llama3";

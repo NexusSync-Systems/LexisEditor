@@ -209,7 +209,7 @@ Object.assign(LexisUI.prototype, {
     openStartSettings() {
         // Z úvodní obrazovky otevři Profil / hlavičkový papír (identita, logo, datová schránka).
         // Plná nastavení (licence, zámek, AI) jsou v záložce Nastavení po otevření dokumentu.
-        try { if (window.showProfileModal) window.showProfileModal(); } catch (e) { /* neblokovat */ }
+        try { if (window.showSettingsModal) window.showSettingsModal(); else if (window.showProfileModal) window.showProfileModal(); } catch (e) { /* neblokovat */ }
     },
 
     loadDynamicTemplates() {

@@ -19,7 +19,8 @@
     "test:all": "npm run test && npm run test:e2e",
     "isds-test": "node scripts/isds-test.js",
     "build:react": "vite build",
-    "watch:react": "vite build --watch"
+    "watch:react": "vite build --watch",
+    "dist:signed": "CSC_IDENTITY_AUTO_DISCOVERY=true electron-builder --mac"
   },
   "build": {
     "appId": "com.lexiseditor.app",
@@ -33,7 +34,11 @@
       "target": [
         "zip",
         "dmg"
-      ]
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
     },
     "dmg": {
       "background": "build/background.png",
