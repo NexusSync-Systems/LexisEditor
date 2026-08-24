@@ -10,6 +10,11 @@ class LexisDialogs {
     }
 
     customAlert(text) {
+        if (window.LexisReactIslands && window.LexisReactIslands.showDialog) {
+            const html = window.LexisIcons ? window.LexisIcons.emojiToIcon(text) : text;
+            window.LexisReactIslands.showDialog({ mode: 'alert', text: html });
+            return;
+        }
         const overlay = document.createElement('div');
         overlay.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);";
         const modal = document.createElement('div');
@@ -30,6 +35,11 @@ class LexisDialogs {
     }
 
     customConfirm(text, okLabel, cancelLabel, callback) {
+        if (window.LexisReactIslands && window.LexisReactIslands.showDialog) {
+            const html = window.LexisIcons ? window.LexisIcons.emojiToIcon(text) : text;
+            window.LexisReactIslands.showDialog({ mode: 'confirm', text: html, okLabel, cancelLabel, onResult: (r) => callback(!!r) });
+            return;
+        }
         const overlay = document.createElement('div');
         overlay.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);";
         const modal = document.createElement('div');
@@ -56,6 +66,11 @@ class LexisDialogs {
     }
 
     customPrompt(title, defaultValue, callback) {
+        if (window.LexisReactIslands && window.LexisReactIslands.showDialog) {
+            const html = window.LexisIcons ? window.LexisIcons.emojiToIcon(title) : title;
+            window.LexisReactIslands.showDialog({ mode: 'prompt', text: html, defaultValue: defaultValue, onResult: (v) => callback(v) });
+            return;
+        }
         const overlay = document.createElement('div');
         overlay.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);";
         const modal = document.createElement('div');
