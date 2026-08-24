@@ -8,7 +8,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // obsahem použije nativní OOXML cestu (docx), jinak html-to-docx. Import z Wordu
     // se zachováním revizí a poznámek pod čarou.
     exportDocxV2: (payload) => ipcRenderer.invoke('export-docx-v2', payload),
-    importDocxNative: (arrayBuffer) => ipcRenderer.invoke('import-docx-native', arrayBuffer),
+    importDocxNative: (arrayBuffer) => ipcRenderer.invoke('import-docx-native', arrayBuffer),    readFileBuffer: (filePath) => ipcRenderer.invoke('read-file-buffer', filePath),
+    onOpenFilePing: (cb) => ipcRenderer.on('open-file-ping', () => cb()),
+    getPendingOpenFile: () => ipcRenderer.invoke('get-pending-open-file'),
+
     docxExtractText: (arrayBuffer) => ipcRenderer.invoke('docx-extract-text', arrayBuffer),
     searchAres: (ico) => ipcRenderer.invoke('search-ares', ico),
     getTemplates: () => ipcRenderer.invoke('get-templates'),
@@ -69,6 +72,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     keyRestore: () => ipcRenderer.invoke('key-restore'),
     // --- E-MAIL S PŘÍLOHOU přes nativního klienta ---
     composeEmailAttach: (opts) => ipcRenderer.invoke('compose-email-attach', opts),
+    confirmLawyerSend: (detail) => ipcRenderer.invoke('lawyer-confirm-send', detail),
     // --- ŠIFROVÁNÍ BLOBŮ pro localStorage at-rest (synchronní) ---
     secureEncrypt: (s) => { try { return ipcRenderer.sendSync('secure-encrypt-sync', s); } catch (e) { return null; } },
     secureDecrypt: (b) => { try { return ipcRenderer.sendSync('secure-decrypt-sync', b); } catch (e) { return null; } },

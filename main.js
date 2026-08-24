@@ -305,6 +305,21 @@ function buildAppMenu() {
     Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
+// --- OTEVŘENÍ SOUBORU ZVENČÍ (open -a LexisEditor soubor.docx / dvojklik / z LexisLocalu) ---
+let pendingOpenPath = null;
+const OPENABLE_EXT = /\.(docx|txt|html?|zfo)$/i;
+function flushOpenPath() {
+    if (!pendingOpenPath || !mainWindow) return;
+    // Jediny konzument je renderer pres get-pending-open-file (pull). Zde jen tukneme,
+    // at si bezici editor cestu vyzvedne; pri studenem startu si ji vyzvedne sam po inicializaci.
+    try { mainWindow.webContents.send('open-file-ping'); if (mainWindow.isMinimized && mainWindow.isMinimized()) mainWindow.restore(); mainWindow.show(); mainWindow.focus(); } catch (e) {}
+}
+app.on('open-file', (event, filePath) => { event.preventDefault(); pendingOpenPath = filePath; flushOpenPath(); });
+ipcMain.handle('get-pending-open-file', () => { const p = pendingOpenPath; pendingOpenPath = null; return p || null; });
+ipcMain.handle('read-file-buffer', async (event, filePath) => {
+    try { return fs.readFileSync(String(filePath)); } catch (e) { return null; }
+});
+
 app.whenReady().then(() => {
     // Vlastní ikona i ve vývoji (bez ní macOS ukazuje Electron ikonu v Docku)
     if (process.platform === 'darwin' && app.dock) {
@@ -315,7 +330,15 @@ app.whenReady().then(() => {
     } catch (e) {}
     try { buildAppMenu(); } catch (e) {}
     createWindow();
+    try {
+        if (!pendingOpenPath) {
+            const argFile = (process.argv || []).find(a => OPENABLE_EXT.test(a) && fs.existsSync(a));
+            if (argFile) pendingOpenPath = argFile;
+        }
+        flushOpenPath();
+    } catch (e) {}
     setTimeout(() => { try { startLexisLocal(); } catch (e) {} }, 1000);
+
 
     app.on('activate', function () {
         if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -1591,6 +1614,12 @@ ipcMain.handle('open-external-url', async (event, url) => {
 // přílohu neumí). macOS → Apple Mail (osascript), Windows → Outlook (PowerShell).
 // Okno se jen zobrazí, neodesílá. Při jakémkoli selhání vrátí success:false —
 // renderer pak spadne zpět na mailto. Vázané na Apple Mail / Outlook.
+ipcMain.handle('lawyer-confirm-send', async (event, detail) => {
+    // Nativní potvrzení advokáta pro odeslání e-mailu klientovi (fail-closed).
+    // Vrací true jen po výslovném kliknutí „Odeslat".
+    return await confirmLawyerSend(String(detail || 'Odeslat e-mail klientovi?'));
+});
+
 ipcMain.handle('compose-email-attach', async (event, opts) => {
     const o = opts || {};
     if (!o.to) return { success: false, error: 'Chybí příjemce.' };

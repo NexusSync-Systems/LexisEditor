@@ -172,7 +172,8 @@
     }
 
     // Odešle e-mail přes LexisLocal (SMTP, i s přílohou). Server po úspěchu sám
-    // zapíše do spisu, takže tady už netřeba potvrzovací krok.
+    // zapíše do spisu. Souhlas advokáta (confirmedByLawyer) se vyžaduje PŘED voláním
+    // této funkce a posílá se v payloadu; server i mailer ho znovu vynucují (fail-closed).
     async function smtpSend(payload) {
         try {
             const conn = window.lexisUI && window.lexisUI.getLexisLocalConnection
@@ -330,10 +331,19 @@
             await saveMap(updateMap(map, spzn, senderId, clientId));
 
             if (method === 'smtp') {
+                // BEZPEČNOSTNÍ INVARIANT: server odešle až po VÝSLOVNÉM souhlasu advokáta.
+                // Nativní potvrzení (nelze proklikat automatizací); bez něj se nic neodešle.
+                let _consent = false;
+                try {
+                    _consent = window.electronAPI && window.electronAPI.confirmLawyerSend
+                        ? await window.electronAPI.confirmLawyerSend('Odeslat e-mail klientovi: ' + client.email + (subject ? '\nVěc: ' + subject : ''))
+                        : false;
+                } catch (e) { _consent = false; }
+                if (!_consent) { toast('Odeslání zrušeno — chybí souhlas advokáta.'); return; }
                 // Odešle SERVER (LexisLocal) i s přílohou → do spisu zapíše sám (pravdivě).
                 const btn = $('#lfw-send'); btn.disabled = true; btn.textContent = 'Odesílám…';
                 const r = await smtpSend(Object.assign({}, payload, {
-                    to: client.email, subject, body, attachmentPaths: attachPaths
+                    to: client.email, subject, body, attachmentPaths: attachPaths, confirmedByLawyer: true
                 }));
                 closeModal();
                 if (r.ok) {

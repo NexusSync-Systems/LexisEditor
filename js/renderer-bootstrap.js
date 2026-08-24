@@ -197,6 +197,14 @@
         window.saveDocument = () => lexisUI.saveDocument();
         window.printDocument = () => lexisUI.printDocument();
         window.importDocument = () => lexisUI.importDocument();
+    window._lxOpenWhenReady = function(p){ if(!p) return; if(window.lexisUI && typeof window.lexisUI.openDocxByPath==='function'){ try{ window.lexisUI.openDocxByPath(p); }catch(e){ console.error('openDocxByPath:', e); } } else { setTimeout(function(){ window._lxOpenWhenReady(p); }, 250); } };
+    if (window.electronAPI && window.electronAPI.onOpenFilePing) {
+        window.electronAPI.onOpenFilePing(function(){ if (window.electronAPI.getPendingOpenFile) window.electronAPI.getPendingOpenFile().then(function(p){ window._lxOpenWhenReady(p); }).catch(function(){}); });
+    }
+
+    if (window.electronAPI && window.electronAPI.getPendingOpenFile) {
+        window.electronAPI.getPendingOpenFile().then(function(p){ window._lxOpenWhenReady(p); }).catch(function(){});
+    }
         window.importZfo = (filePath) => lexisUI.importZfo(filePath);
         window.toggleQATItem = (id) => lexisUI.toggleQATItem(id);
         window.saveSelectedAsClause = () => lexisUI.saveSelectedAsClause();

@@ -248,7 +248,7 @@ Object.assign(LexisUI.prototype, {
                     // dokumenty (tabulky, obrázky, seznamy) jdou přes mammoth.
                     if (window.electronAPI && window.electronAPI.importDocxNative) {
                         try {
-                            const nat = await window.electronAPI.importDocxNative(arrayBuffer);
+                            const nat = await window.electronAPI.importDocxNative(u8.slice().buffer);
                             if (nat && nat.success && nat.hasTracked && nat.html) {
                                 this.core.setContent(nat.html);
                                 this.setDocumentStatus(null, true);
@@ -296,6 +296,65 @@ Object.assign(LexisUI.prototype, {
             }
         };
         input.click();
+    },
+
+    // Otevře dokument z cesty (open-file zvenčí: `open -a LexisEditor soubor.docx`,
+    // dvojklik ve Finderu, nebo předání z LexisLocalu). Stejná logika jako importDocument.
+    async openDocxByPath(filePath) {
+        if (!filePath || !window.electronAPI) return;
+        const lower = String(filePath).toLowerCase();
+        const fileName = String(filePath).split('/').pop();
+        const cleanTitle = fileName.replace(/\.[^/.]+$/, "");
+        const startScreen = document.getElementById('start-screen');
+        const appContainer = document.getElementById('app-container');
+        if (startScreen && appContainer) { startScreen.style.display = 'none'; appContainer.style.display = 'flex'; }
+        this.currentDocumentTitle = cleanTitle; this.updateDocTitleDOM(); this.resetHeaderFooterDOM();
+        try {
+            if (lower.endsWith('.zfo')) { this.importZfo(filePath); return; }
+            if (lower.endsWith('.docx')) {
+                try {
+                    if (window.electronAPI.readDocxSpec && window.applyDocumentSpec) {
+                        const sp = await window.electronAPI.readDocxSpec(filePath);
+                        if (sp && sp.success && sp.hasSpec && sp.spec) {
+                            window.applyDocumentSpec(sp.spec);
+                            if (sp.spec.title) { this.currentDocumentTitle = sp.spec.title; this.updateDocTitleDOM(); }
+                            this.setDocumentStatus(null, true);
+                            await this.saveActiveDocumentState();
+                            if (typeof this.updateDocumentOutline === 'function') this.updateDocumentOutline();
+                            return;
+                        }
+                    }
+                } catch (e) { /* fallback nize */ }
+                const raw = await window.electronAPI.readFileBuffer(filePath);
+                if (!raw) return;
+                const u8 = (raw instanceof Uint8Array) ? raw : new Uint8Array(raw);
+                if (window.electronAPI.importDocxNative) {
+                    try {
+                        const nat = await window.electronAPI.importDocxNative(arrayBuffer);
+                        if (nat && nat.success && nat.hasTracked && nat.html) {
+                            this.core.setContent(nat.html); this.setDocumentStatus(null, true); this.saveActiveDocumentState(); return;
+                        }
+                    } catch (e) { /* fallback na mammoth */ }
+                }
+                const result = await mammoth.convertToHtml({ arrayBuffer: u8.slice().buffer }, {
+                    includeDefaultStyleMap: true,
+                    styleMap: [
+                        "u => u", "strike => s",
+                        "p[style-name='Nadpis 1'] => h1:fresh", "p[style-name='Nadpis 2'] => h2:fresh",
+                        "p[style-name='Nadpis 3'] => h3:fresh", "p[style-name='Nadpis 4'] => h4:fresh",
+                        "p[style-name='Nadpis'] => h1:fresh",
+                        "p[style-name='Heading 1'] => h1:fresh", "p[style-name='Heading 2'] => h2:fresh",
+                        "p[style-name='Heading 3'] => h3:fresh", "p[style-name='Heading 4'] => h4:fresh",
+                        "p[style-name='Title'] => h1:fresh"
+                    ]
+                });
+                this.core.setContent(result.value); this.setDocumentStatus(null, true); this.saveActiveDocumentState();
+            } else {
+                const raw = await window.electronAPI.readFileBuffer(filePath);
+                const text = (typeof raw === 'string') ? raw : new TextDecoder('utf-8').decode(raw);
+                this.core.setContent(text); this.setDocumentStatus(null, true); this.saveActiveDocumentState();
+            }
+        } catch (e) { console.error('openDocxByPath selhal:', e); try { this.customAlert('❌ <b>Nepodařilo se otevřít dokument</b><br><br>' + (window.escapeHTML ? window.escapeHTML(String((e && e.message) || e)) : String(e))); } catch (_) {} }
     },
 
     async importZfo(filePath) {
