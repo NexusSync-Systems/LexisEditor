@@ -215,16 +215,21 @@ function createWindow() {
 
     // Bezpečnost: hlavní okno se nesmí odnavigovat mimo appku (cizí .docx nebo
     // vložený odkaz by jinak mohl přesměrovat renderer). Cizí http(s) odkazy
-    // otevřeme v systémovém prohlížeči, vše ostatní zablokujeme.
+    // otevřeme venku; vlastní blob:/data: náhledy povolíme; zbytek blokujeme.
+    const EXTERNAL = new Set(['http:', 'https:', 'mailto:', 'tel:']);
+    const INTERNAL = new Set(['blob:', 'data:', 'about:']);
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-        try { const u = new URL(url); if (u.protocol === 'https:' || u.protocol === 'http:') shell.openExternal(url); } catch (e) { /* ignore */ }
+        try {
+            const p = new URL(url).protocol;
+            if (EXTERNAL.has(p)) { shell.openExternal(url); return { action: 'deny' }; }
+            if (INTERNAL.has(p)) return { action: 'allow' }; // vlastní náhled (blob:/data:) appky
+        } catch (e) { /* ignore */ }
         return { action: 'deny' };
     });
     mainWindow.webContents.on('will-navigate', (event, url) => {
-        if (url !== mainWindow.webContents.getURL()) {
-            event.preventDefault();
-            try { const u = new URL(url); if (u.protocol === 'https:' || u.protocol === 'http:') shell.openExternal(url); } catch (e) { /* ignore */ }
-        }
+        if (url === mainWindow.webContents.getURL()) return; // reload sebe sama je OK
+        event.preventDefault();
+        try { if (EXTERNAL.has(new URL(url).protocol)) shell.openExternal(url); } catch (e) { /* ignore */ }
     });
     // mainWindow.webContents.openDevTools();
 
