@@ -916,11 +916,11 @@ ipcMain.handle('export-bundle', async (event, htmlContent, cssContent, headerHtm
                 <body>
                     <div id="editor-wrapper" style="position:relative; border:none; box-shadow:none; width:auto; min-height:auto; display:flex; flex-direction:column;">
                         ${watermarkHtml ? `<div class="page-watermark" style="position:absolute; inset:0; z-index:0; pointer-events:none; display:flex; align-items:center; justify-content:center; overflow:hidden;">${watermarkHtml}</div>` : ''}
-                        ${headerHtml ? `<div class="page-header" id="header-area" style="padding: 10mm 40mm 5mm 40mm !important; min-height: auto;">${headerHtml}</div>` : ''}
+                        ${headerHtml ? `<div class="page-header" id="header-area" style="padding: 10mm 15mm 5mm 15mm !important; min-height: auto;">${headerHtml}</div>` : ''}
                         <div class="ql-container ql-snow" style="border:none; flex-grow:1;">
                             <div class="ql-editor">${htmlContent}</div>
                         </div>
-                        ${footerHtml ? `<div class="page-footer" id="footer-area" style="padding: 5mm 40mm 10mm 40mm !important; margin-top: auto;">${footerHtml}</div>` : ''}
+                        ${footerHtml ? `<div class="page-footer" id="footer-area" style="padding: 5mm 15mm 10mm 15mm !important; margin-top: auto;">${footerHtml}</div>` : ''}
                     </div>
                 </body>
                 </html>
@@ -990,9 +990,9 @@ ipcMain.handle('sign-pdf', async (event, payload) => {
             </style></head><body>
                 <div id="editor-wrapper" style="position:relative; border:none; box-shadow:none; width:auto; min-height:auto; display:flex; flex-direction:column;">
                     ${watermarkHtml ? `<div class="page-watermark" style="position:absolute; inset:0; z-index:0; pointer-events:none; display:flex; align-items:center; justify-content:center; overflow:hidden;">${watermarkHtml}</div>` : ''}
-                    ${headerHtml ? `<div class="page-header" id="header-area" style="padding: 10mm 40mm 5mm 40mm !important;">${headerHtml}</div>` : ''}
+                    ${headerHtml ? `<div class="page-header" id="header-area" style="padding: 10mm 15mm 5mm 15mm !important;">${headerHtml}</div>` : ''}
                     <div class="ql-container ql-snow" style="border:none; flex-grow:1;"><div class="ql-editor">${htmlContent}</div></div>
-                    ${footerHtml ? `<div class="page-footer" id="footer-area" style="padding: 5mm 40mm 10mm 40mm !important; margin-top: auto;">${footerHtml}</div>` : ''}
+                    ${footerHtml ? `<div class="page-footer" id="footer-area" style="padding: 5mm 15mm 10mm 15mm !important; margin-top: auto;">${footerHtml}</div>` : ''}
                 </div>
             </body></html>`;
         await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(fullHtml)}`);

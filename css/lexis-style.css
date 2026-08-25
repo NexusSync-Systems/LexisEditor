@@ -190,7 +190,7 @@ body {
 }
 
 .page-header, .page-footer {
-    padding: 20mm 40mm 10mm 40mm !important; font-size: 11px; color: #a09a92; border: 1px dashed transparent; transition: all 0.2s;
+    padding: 15mm 15mm 10mm 15mm !important; font-size: 11px; color: #a09a92; border: 1px dashed transparent; transition: all 0.2s;
     min-height: 10mm; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
 }
 .page-header:hover, .page-footer:hover {
@@ -203,12 +203,12 @@ body {
     background: #f6efe4;
     outline: none;
 }
-.page-footer { padding: 10mm 40mm 20mm 40mm !important; margin-top: auto; }
+.page-footer { padding: 10mm 15mm 15mm 15mm !important; margin-top: auto; }
 
 
 .ql-container.ql-snow { border: none !important; flex-grow: 1; display: flex; flex-direction: column; }
 .ql-editor, #editor .ql-editor, .ql-container .ql-editor { 
-    padding: 20mm 25mm 25mm 25mm !important; 
+    padding: 15mm 15mm 15mm 15mm !important; 
     flex-grow: 1; outline: none; line-height: 1.6; 
     font-size: 12pt; color: #2b2926;
 }

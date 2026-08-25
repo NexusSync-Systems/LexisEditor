@@ -638,8 +638,8 @@ Object.assign(LexisUI.prototype, {
             .replace(/{TITULEK}/g, docTitle);
 
         // Build HTML for header/footer area
-        const paddingMap = { compact: '5mm 40mm', normal: '10mm 40mm', tall: '15mm 40mm' };
-        const padding = paddingMap[height] || '10mm 40mm';
+        const paddingMap = { compact: '5mm 15mm', normal: '10mm 15mm', tall: '15mm 15mm' };
+        const padding = paddingMap[height] || '10mm 15mm';
 
         const buildCellHtml = (text, imgSrc, align) => {
             let html = `<div style="flex:1; text-align:${align}; font-family:${fontFamily}; font-size:${fontSize}; color:${textColor}; white-space:pre-line;">`;
