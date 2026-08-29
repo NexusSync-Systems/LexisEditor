@@ -76,7 +76,8 @@
       {
         "provider": "github",
         "owner": "NexusSync-Systems",
-        "repo": "LexisEditor"
+        "repo": "LexisEditor",
+        "releaseType": "release"
       }
     ]
   },
