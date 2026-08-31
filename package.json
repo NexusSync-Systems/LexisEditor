@@ -24,7 +24,11 @@
     "prestart": "npm run build:react",
     "prepack": "npm run build:react",
     "predist": "npm run build:react",
-    "predist:signed": "npm run build:react"
+    "predist:signed": "npm run build:react",
+    "build:mobile": "node scripts/build-mobile.mjs",
+    "cap:sync": "npm run build:mobile && npx cap sync",
+    "cap:ios": "npm run cap:sync && npx cap open ios",
+    "cap:android": "npm run cap:sync && npx cap open android"
   },
   "build": {
     "appId": "com.lexiseditor.app",
@@ -32,8 +36,7 @@
       "output": "dist"
     },
     "mac": {
-      "identity": null,
-      "notarize": false,
+      "notarize": true,
       "category": "public.app-category.productivity",
       "target": [
         "zip",
@@ -76,13 +79,15 @@
       {
         "provider": "github",
         "owner": "Zdenekdi",
-        "repo": "LexisEditor"
+        "repo": "LexisEditor",
+        "releaseType": "release"
       }
     ]
   },
   "author": "Advokátní kancelář",
   "license": "ISC",
   "devDependencies": {
+    "@capacitor/cli": "^6.2.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.60.0",
     "@vitejs/plugin-react": "^4.7.0",
@@ -96,6 +101,9 @@
     "vite": "^5.4.21"
   },
   "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/ios": "^6.2.0",
     "@signpdf/placeholder-pdf-lib": "^3.2.4",
     "@signpdf/signer-p12": "^3.2.4",
     "@signpdf/signpdf": "^3.2.4",
