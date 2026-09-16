@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">LexisEditor</string>
+    <string name="title_activity_main">LexisEditor</string>
+    <string name="package_name">com.lexiseditor.mobile</string>
+    <string name="custom_url_scheme">com.lexiseditor.mobile</string>
+</resources>

@@ -1,0 +1,11 @@
+{
+  "appId": "com.lexiseditor.mobile",
+  "appName": "LexisEditor",
+  "webDir": "mobile/www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "always"
+  }
+}

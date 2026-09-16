@@ -78,7 +78,7 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "Zdenekdi",
+        "owner": "NexusSync-Systems",
         "repo": "LexisEditor",
         "releaseType": "release"
       }

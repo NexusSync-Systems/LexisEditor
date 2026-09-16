@@ -5,7 +5,13 @@
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' http://localhost:* http://127.0.0.1:* https://localhost:* https://ares.gov.cz https://*.mojedatovaschranka.cz https://isir.justice.cz https://adisrws.mfcr.cz https://api.github.com https://*.githubusercontent.com; object-src 'none'; base-uri 'none'; form-action 'self'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LexisEditor</title>
-    
+
+    <!-- Mobilní most (Capacitor): na iOS/Androidu nahradí Electron IPC. V Electronu
+         je to no-op, protože preload už window.electronAPI nastavil. Musí být první. -->
+    <script src="js/capacitor-bridge.js"></script>
+    <!-- Mobilní companion UX vrstva (aktivní jen když je LEXIS_MOBILE). -->
+    <script src="js/mobile-ui.js"></script>
+
     <!-- Libraries (lokálně přibalené — aplikace běží i offline, bez CDN) -->
     <link href="css/vendor/quill.snow.css" rel="stylesheet">
     <script src="js/vendor/quill.js"></script>
@@ -28,6 +34,7 @@
     
     <link rel="stylesheet" href="css/tokens.css">
     <link rel="stylesheet" href="css/lexis-style.css">
+    <link rel="stylesheet" href="css/mobile.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Outfit:wght@400;600&family=Inter:wght@300;400;500;600&family=Lora:ital,wght@0,400;0,700;1,400&family=Roboto+Slab&display=swap');
 

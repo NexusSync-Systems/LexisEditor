@@ -1,0 +1,108 @@
+/*
+ * mobile.css — mobilní (companion) vrstva LexisEditoru.
+ *
+ * VŠE je scopované pod `html.lexis-mobile`, kterou nastaví js/mobile-ui.js jen na
+ * telefonu (iOS/Android přes Capacitor). V Electronu se třída NIKDY nepřidá →
+ * desktopový vzhled je 100% nedotčený. Pravidla jsou záměrně konzervativní:
+ * touch cíle, žádný horizontální scroll, respekt k „safe area" (výřez/lišta),
+ * a plná šířka dialogů. Jemné doladění podle reálného layoutu přijde až podle
+ * náhledu ze simulátoru.
+ */
+
+/* ── základ: žádné vodorovné přetečení, respekt k výřezu iOS ─────────────── */
+html.lexis-mobile,
+html.lexis-mobile body {
+  max-width: 100%;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+html.lexis-mobile body {
+  /* výřez / stavová a domovská lišta (iOS notch, Android gesture bar) */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* ── touch cíle: malá tlačítka zvětšíme na pohodlný dotyk (min 44 px) ────── */
+html.lexis-mobile button,
+html.lexis-mobile .btn,
+html.lexis-mobile [role="button"],
+html.lexis-mobile input[type="button"],
+html.lexis-mobile input[type="submit"] {
+  min-height: 44px;
+}
+
+/* text v editoru čitelnější na malém displeji */
+html.lexis-mobile .ql-editor {
+  font-size: 16px;         /* 16px brání iOS auto-zoomu při fokusu */
+  line-height: 1.5;
+}
+
+/* pole formulářů: 16px = žádný nechtěný zoom při zaostření na iOS */
+html.lexis-mobile input,
+html.lexis-mobile textarea,
+html.lexis-mobile select {
+  font-size: 16px;
+}
+
+/* dialogy / modály na plnou šířku (běžné vzory tříd, nenásilně) */
+html.lexis-mobile .modal,
+html.lexis-mobile [role="dialog"] {
+  max-width: 100vw;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* prvky výslovně označené jako pouze-desktop skryjeme (viz mobile-ui.js) */
+html.lexis-mobile [data-desktop-only],
+html.lexis-mobile .desktop-only {
+  display: none !important;
+}
+
+/* ── companion baner (informuje, že telefon je doplněk k desktopu) ───────── */
+html.lexis-mobile .lexis-mobile-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2147483000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  background: #201e1d;
+  color: #f3f2f2;
+  font: 500 13px/1.35 system-ui, -apple-system, "Inter", sans-serif;
+  box-shadow: 0 -4px 18px rgba(0, 0, 0, .28);
+  transform: translateY(0);
+  transition: transform .22s ease;
+}
+
+html.lexis-mobile .lexis-mobile-banner[hidden] {
+  transform: translateY(110%);
+}
+
+html.lexis-mobile .lexis-mobile-banner .lmb-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ec3013;
+}
+
+html.lexis-mobile .lexis-mobile-banner .lmb-text { flex: 1 1 auto; }
+html.lexis-mobile .lexis-mobile-banner strong { font-weight: 700; }
+
+html.lexis-mobile .lexis-mobile-banner .lmb-close {
+  flex: 0 0 auto;
+  min-height: 0;
+  padding: 6px 10px;
+  border: 1px solid rgba(243, 242, 242, .35);
+  border-radius: 8px;
+  background: transparent;
+  color: #f3f2f2;
+  font: 600 13px/1 system-ui, sans-serif;
+}
