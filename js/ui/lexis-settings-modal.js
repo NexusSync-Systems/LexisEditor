@@ -10,6 +10,7 @@
   const I_DB = ic('<ellipse cx="12" cy="6" rx="7" ry="2.6"/><path d="M5 6v12c0 1.5 3.1 2.6 7 2.6s7-1.1 7-2.6V6"/><path d="M5 12c0 1.5 3.1 2.6 7 2.6s7-1.1 7-2.6"/>');
   const I_LOOK = ic('<circle cx="12" cy="12" r="8.5"/><circle cx="8.5" cy="9.5" r="1"/><circle cx="15.5" cy="9.5" r="1"/><circle cx="9" cy="15" r="1"/><path d="M12 20.5a8.5 8.5 0 0 0 0-17"/>');
   const I_HELP = ic('<path d="M9 16a5.5 5.5 0 1 1 6 0v1.5H9z"/><path d="M9.4 20h5.2M10.5 21.6h3"/>');
+  const I_LOCK = ic('<rect x="5" y="10.2" width="14" height="9.8" rx="2"/><path d="M8 10.2V7a4 4 0 0 1 8 0v3.2"/><circle cx="12" cy="14.6" r="1.1"/>');
 
   const card = (icon, title, rows) =>
     '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:4px 20px 12px;box-shadow:var(--shadow-card);">'
@@ -43,6 +44,8 @@
       +   '<div id="set-close" title="Zavřít" style="cursor:pointer;color:var(--text-faint);font-size:20px;line-height:1;padding:4px 8px;border-radius:8px;">✕</div>'
       + '</div>'
       + '<div style="padding:20px 24px 26px;display:flex;flex-direction:column;gap:14px;">'
+      +   card(I_LOCK, 'Zabezpečení',
+            row('Zámek aplikace', 'PIN/heslo, Touch ID a automatický zámek', btn('set-security', 'Nastavit')))
       +   card(I_AI, 'Umělá inteligence',
             row('Poskytovatel', 'Model běžící na tomto počítači', '<span style="flex:none;font:600 13px var(--font-ui);color:var(--ink);background:var(--surface-2);border:1px solid var(--border-strong);border-radius:8px;padding:8px 12px;">' + provLabel + '</span>')
             + row('Pokročilé nastavení AI', 'Model, endpoint, agenti', btn('set-ai-adv', 'Otevřít'))
@@ -65,6 +68,7 @@
     const $ = (s) => ov.querySelector(s);
     $('#set-close').onclick = () => ov.remove();
     const wire = (s, fn, close) => { const el = $(s); if (el) el.onclick = () => { if (close) ov.remove(); try { fn(); } catch (e) {} }; };
+    wire('#set-security', () => { if (window.lockScreen) window.lockScreen.openSecuritySettings(); }, true);
     wire('#set-ai-adv', () => { if (window.switchTab) window.switchTab('tab-settings'); }, true);
     wire('#set-isds', () => { if (window.openIsdsSettings) window.openIsdsSettings(); }, false);
     wire('#set-datovky', () => { if (window.openDatovkaDialog) window.openDatovkaDialog(); }, true);

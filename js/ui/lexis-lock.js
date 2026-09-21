@@ -278,6 +278,10 @@ class LexisLock {
         if (p2) p2.value = '';
         if (hint) hint.textContent = '';
 
+        // časovač automatického zámku (jeden zdroj pravdy = lexisUI.lockTimeout)
+        const toEl = document.getElementById('sec-lock-timeout');
+        if (toEl && window.lexisUI) toEl.value = String(window.lexisUI.lockTimeout);
+
         overlay.style.display = 'flex';
     }
 
