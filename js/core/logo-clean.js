@@ -92,9 +92,34 @@
 
   // Ověří, že obrázek jde plně dekódovat (odhalí useknuté/poškozené soubory,
   // které se v prohlížeči „napůl" vykreslí jako šum). Vrací Promise<boolean>.
+  // Strukturální kontrola koncové značky (odhalí useknuté soubory, které
+  // prohlížeč jinak částečně „dodekóduje"): PNG končí IEND, JPEG FFD9, GIF 0x3B.
+  function _endMarkerOk(dataUrl) {
+    try {
+      var head = String(dataUrl).slice(0, 40).toLowerCase();
+      var comma = dataUrl.indexOf(',');
+      if (comma < 0) return true;
+      if (head.indexOf(';base64') < 0) return true; // ne-base64 (např. svg utf8) → přeskoč
+      var bin = atob(dataUrl.slice(comma + 1));
+      var n = bin.length;
+      if (n < 16) return false;
+      var at = function (k) { return bin.charCodeAt(n - k); };
+      if (head.indexOf('image/png') >= 0) {
+        return at(8) === 0x49 && at(7) === 0x45 && at(6) === 0x4E && at(5) === 0x44 &&
+               at(4) === 0xAE && at(3) === 0x42 && at(2) === 0x60 && at(1) === 0x82;
+      }
+      if (head.indexOf('image/jpeg') >= 0 || head.indexOf('image/jpg') >= 0) {
+        return at(2) === 0xFF && at(1) === 0xD9;
+      }
+      if (head.indexOf('image/gif') >= 0) { return at(1) === 0x3B; }
+      return true; // webp/svg/ostatní → strukturu nekontrolujeme, spolehneme na decode()
+    } catch (e) { return true; }
+  }
+
   function isDecodable(dataUrl) {
     return new Promise(function (res) {
       if (typeof document === 'undefined' || !dataUrl) { res(true); return; }
+      if (!_endMarkerOk(dataUrl)) { res(false); return; }
       var img = new Image();
       if (typeof img.decode === 'function') {
         img.src = dataUrl;
