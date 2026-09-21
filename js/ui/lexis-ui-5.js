@@ -343,7 +343,9 @@ Object.assign(LexisUI.prototype, {
         
         if (!hearingsSection || !hearingsList) return;
         
-        if (detectedCourt && detectedSpzn) {
+        // Vyžaduj i kód soudu — bez něj nelze sestavit dotaz a .kod.startsWith
+        // by spadl (Cannot read properties of undefined).
+        if (detectedCourt && detectedCourt.kod && detectedSpzn) {
             hearingsSection.style.display = 'block';
             hearingsList.innerHTML = eIco(`
                 <div style="font-size: 11px; color: #77716a; text-align: center; padding: 10px; font-style: italic;">

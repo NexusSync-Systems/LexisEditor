@@ -45,9 +45,18 @@ Object.assign(LexisUI.prototype, {
     },
 
     lockApp() {
-        const lockScreen = document.getElementById('lock-screen');
-        if (lockScreen && this.lockTimeout > 0) {
-            lockScreen.style.display = 'flex';
+        // Zamkni JEN když je zámek v Zabezpečení zapnutý A je nastavené heslo/PIN.
+        // Jinak by se aplikace zamkla a uživatel by neměl čím odemknout.
+        const lock = (typeof window !== 'undefined') ? window.lockScreen : null;
+        const cfg = lock && lock._config;
+        if (!cfg || !cfg.enabled || !cfg.hasPassword) return;
+        if (!(this.lockTimeout > 0)) return;
+        // Přes lock manažer (nastaví zobrazení + nabídne Touch ID, je-li k dispozici)
+        if (lock && typeof lock.showLockScreen === 'function') {
+            lock.showLockScreen();
+        } else {
+            const lockScreen = document.getElementById('lock-screen');
+            if (lockScreen) lockScreen.style.display = 'flex';
         }
     },
 
