@@ -734,10 +734,15 @@ Object.assign(LexisUI.prototype, {
         if (mode === 'normal' || mode === this._currentViewMode) {
             // Toggle off — return to normal
             this._currentViewMode = 'normal';
+            if (this._paginated) this._paginated.disable();
+            if (this._pageGuides) this._pageGuides.refresh();
             return;
         }
 
         this._currentViewMode = mode;
+
+        // stránkový náhled patří jen k režimu „Tisk"
+        if (mode !== 'print' && this._paginated) this._paginated.disable();
 
         if (mode === 'reading') {
             document.body.classList.add('reading-mode');
@@ -747,11 +752,14 @@ Object.assign(LexisUI.prototype, {
             document.body.classList.add('print-layout');
             const btn = document.getElementById('view-btn-print');
             if (btn) btn.classList.add('view-mode-active');
+            if (this._paginated) this._paginated.enable();
         } else if (mode === 'web') {
             document.body.classList.add('web-layout');
             const btn = document.getElementById('view-btn-web');
             if (btn) btn.classList.add('view-mode-active');
         }
+
+        if (this._pageGuides) this._pageGuides.refresh();
     },
 
     closeCampaign() {

@@ -108,6 +108,8 @@
     }
 
     function setStatus(pages) {
+      // když běží stránkový náhled (režim Tisk), o stavový řádek se stará on
+      try { if (document.body.classList.contains('lex-paginated-on')) return; } catch (e) {}
       var chars = 0, words = 0;
       if (quill && typeof quill.getText === 'function') {
         var txt = quill.getText();
