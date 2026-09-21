@@ -16,6 +16,7 @@
     <link href="css/vendor/quill.snow.css" rel="stylesheet">
     <script src="js/vendor/quill.js"></script>
     <script src="js/core/paste-styles.js"></script>
+    <script src="js/core/custom-menu.js"></script>
     <script>
         // Pojistka pro knihovny s CommonJS exportem v prostředí Electronu.
         window.temp_module = window.module;
@@ -926,10 +927,14 @@
         <div class="context-menu-item" onclick="researchFindLaw()" title="Externí rešerše (cloud) — dohledá zákon/ustanovení u zvoleného poskytovatele"><span class="icon"><svg width="15" height="15" style="display:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span> Dohledat ustanovení ☁</div>
         <div class="context-menu-item" onclick="anonymizeSelection()"><span class="icon"><svg width="15" height="15" style="display:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12s3.6-5.6 9-5.6S21 12 21 12s-3.6 5.6-9 5.6S3 12 3 12z"/><circle cx="12" cy="12" r="2.3"/><path d="M4.5 20L19.5 4.5"/></svg></span> Anonymizovat</div>
         <div class="context-menu-item" onclick="makePlaceholder()"><span class="icon"><b>[ ]</b></span> Vytvořit pole</div>
+        <div class="context-menu-item" onclick="insertLink()"><span class="icon">🔗</span> Vložit odkaz</div>
+        <div class="context-menu-item" onclick="translateSelection()"><span class="icon">🌐</span> Přeložit výběr</div>
         
         <div class="context-menu-sep"></div>
         
         <div class="context-menu-item" onclick="showFindReplace()"><span class="icon"><svg width="15" height="15" style="display:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6"/><path d="M15.4 15.4L20 20"/></svg></span> Najít v dokumentu</div>
+        <div class="context-menu-sep"></div>
+        <div id="cm-manage-item" class="context-menu-item" onclick="lexisUI.openCustomMenuManager()"><span class="icon">⚙</span> Upravit vlastní položky…</div>
     </div>
 
     <!-- QAT Customization Menu -->

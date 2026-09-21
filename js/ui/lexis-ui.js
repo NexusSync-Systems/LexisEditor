@@ -251,6 +251,13 @@ class LexisUI {
         // + návrhy oprav (viz main.js webContents 'context-menu'). Uložíme je a když
         // je menu otevřené, doplníme návrhy nahoru. (IPC dorazí o tik po DOM události.)
         this._spellCtx = { word: '', suggestions: [] };
+        // Vlastní uživatelské položky kontextového menu (načtení z úložiště).
+        this._customMenuItems = [];
+        if (window.LexisCustomMenu && this.core && this.core.storage) {
+            Promise.resolve(this.core.storage.get('settings', 'custom-context-items')).then((v) => {
+                this._customMenuItems = window.LexisCustomMenu.normalizeItems(v || []);
+            }).catch(() => {});
+        }
         if (window.electronAPI && typeof window.electronAPI.onSpellcheckContext === 'function') {
             window.electronAPI.onSpellcheckContext((data) => {
                 this._spellCtx = data || { word: '', suggestions: [] };
@@ -270,6 +277,28 @@ class LexisUI {
             contextMenu.style.top = `${e.clientY}px`;
             // Návrhy, pokud IPC dorazil dřív; jinak je doplní listener výše.
             this._renderSpellItems(contextMenu);
+            // Vlastní uživatelské položky (vloží se před „Upravit…").
+            try {
+                if (window.LexisCustomMenu) {
+                    window.LexisCustomMenu.renderInto(contextMenu, this._customMenuItems || [], (it) => {
+                        contextMenu.style.display = 'none';
+                        window.LexisCustomMenu.executeItem(it, { quill: this.core && this.core.quill, ui: this });
+                    });
+                }
+            } catch (e) { /* nadstavba */ }
+        });
+    }
+
+    // Otevře správce vlastních položek kontextového menu.
+    openCustomMenuManager() {
+        if (!window.LexisCustomMenu) return;
+        const self = this;
+        window.LexisCustomMenu.openManager({
+            items: this._customMenuItems || [],
+            save: async (list) => {
+                self._customMenuItems = list;
+                try { await self.core.storage.set('settings', { key: 'custom-context-items', value: list }); } catch (e) { /* nevadí */ }
+            }
         });
     }
 
