@@ -75,6 +75,7 @@ class LexisUI {
         this.initDeadlines();
         this.initActiveDocumentState();
         this.initRibbonTooltips();
+        this.initPageGuides();
     }
 
     bindEvents() {
@@ -1535,6 +1536,25 @@ class LexisUI {
 
     _currentViewMode = 'normal';
 
+    // ── Živé rozvržení stránek (A4) ────────────────────────────────────────────
+    // Vykreslí přes editor vodicí linky po výšce A4 a živě čísluje strany +
+    // dopočítává stavový řádek (Strana X z Y, Slova, Znaky, Normostrany).
+    initPageGuides() {
+        try {
+            const wrapper = document.getElementById('editor-wrapper');
+            const quill = this.core && this.core.quill;
+            if (!wrapper || !window.LexisPageGuides) return;
+            this._pageGuides = window.LexisPageGuides.create({ wrapper: wrapper, quill: quill });
+        } catch (e) { console.warn('[PageGuides] init selhal', e); }
+    }
+
+    togglePageGuides(force) {
+        if (!this._pageGuides) return false;
+        const on = (typeof force === 'boolean') ? force : !this._pageGuides.isEnabled();
+        this._pageGuides.setEnabled(on);
+        return on;
+    }
+
     setViewMode(mode) {
         // Remove all view mode classes
         document.body.classList.remove('reading-mode', 'print-layout', 'web-layout');
@@ -1566,6 +1586,9 @@ class LexisUI {
             const btn = document.getElementById('view-btn-web');
             if (btn) btn.classList.add('view-mode-active');
         }
+
+        // přepočítej vodítka stránek pro nový režim (jiná šířka/škála)
+        if (this._pageGuides) this._pageGuides.refresh();
     }
 
     // ==========================================

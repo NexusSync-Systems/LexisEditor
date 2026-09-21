@@ -1665,3 +1665,40 @@ body.dark-mode #security-settings-overlay [style*="color:#4f7a41"] { color: var(
 }
 
 .recent-doc-row:hover { border-color: var(--accent); }
+
+/* ── Živé rozvržení stránek (A4) — vizuální vodítka v editoru ────────────────
+ * Overlay leží PŘES #editor-wrapper (ten má position:relative). Nezasahuje do
+ * toku textu ani do exportu; jen ukazuje, kde končí jedna A4 strana a začíná
+ * další, a čísluje strany. Řízeno modulem js/core/page-guides.js.
+ */
+.lexis-page-guides {
+    position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+    pointer-events: none; z-index: 6; overflow: hidden;
+}
+.lexis-page-guides .lpg-line {
+    position: absolute; left: -1px; right: -1px; height: 0;
+    border-top: 1px dashed rgba(154, 91, 34, 0.45);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.65), 0 7px 11px -7px rgba(0, 0, 0, 0.18);
+}
+.lexis-page-guides .lpg-line-tag {
+    position: absolute; right: 8px; top: 2px;
+    font: 700 9px/1 system-ui, -apple-system, sans-serif;
+    color: #9a5b22; background: rgba(246, 239, 228, 0.92);
+    padding: 2px 7px; border-radius: 0 0 6px 6px; letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.lexis-page-guides .lpg-pagenum {
+    position: absolute; right: 8px;
+    font: 700 9px/1 system-ui, -apple-system, sans-serif;
+    color: #b7ad9f; letter-spacing: 0.05em; text-transform: uppercase;
+}
+/* v režimu Tisk (šedá „mezistránková" plocha) zvýrazni dělení stran */
+body.print-layout .lexis-page-guides .lpg-line {
+    border-top-color: rgba(154, 91, 34, 0.6);
+    box-shadow: 0 -9px 15px -11px rgba(0, 0, 0, 0.22), 0 11px 17px -11px rgba(0, 0, 0, 0.3);
+}
+/* web/čtení/PDF/tisk: koncept stránek nedává smysl nebo by se vytiskl */
+body.web-layout .lexis-page-guides,
+body.reading-mode .lexis-page-guides,
+body.pdf-active .lexis-page-guides { display: none !important; }
+@media print { .lexis-page-guides { display: none !important; } }
