@@ -43,6 +43,19 @@
     // plná" strana nepřeskočí zbytečně na další.
     return Math.max(1, Math.ceil((heightPx - 2) / pagePx));
   }
+  // Posuň ideální zlom (k*výška strany) do MEZERY mezi řádky, ať nikdy
+  // neprotne text. Padne-li ideál doprostřed řádku, zlomí se PŘED ním
+  // (řádek se tak vizuálně přesune na další stranu, jako ve Wordu).
+  // boxes = pole {top,bottom} řádkových boxů seřazené vzestupně dle top.
+  function snapToGap(idealY, boxes) {
+    if (!boxes || !boxes.length) return idealY;
+    for (var i = 0; i < boxes.length; i++) {
+      var b = boxes[i];
+      if (idealY < b.top) return idealY;        // už je v mezeře před řádkem
+      if (idealY <= b.bottom) return b.top - 1; // uvnitř řádku → před něj
+    }
+    return idealY;                               // za posledním řádkem
+  }
 
   // ── DOM část (jen prohlížeč / WebView) ──────────────────────────────────────
   function measurePxPerMm(container) {
@@ -111,6 +124,26 @@
       if (ns) ns.textContent = normostrany(chars).toFixed(2);
     }
 
+    // řádkové boxy editoru v souřadnicích wrapperu (kvůli „nekřížit text")
+    function getLineBoxes() {
+      try {
+        var ed = wrapper.querySelector('.ql-editor') || wrapper.querySelector('#editor');
+        if (!ed) return [];
+        var range = document.createRange();
+        range.selectNodeContents(ed);
+        var rects = range.getClientRects();
+        var wTop = wrapper.getBoundingClientRect().top;
+        var boxes = [];
+        for (var i = 0; i < rects.length; i++) {
+          var r = rects[i];
+          if (r.height <= 0 || r.width <= 0) continue;
+          boxes.push({ top: r.top - wTop, bottom: r.bottom - wTop });
+        }
+        boxes.sort(function (a, b) { return a.top - b.top; });
+        return boxes;
+      } catch (e) { return []; }
+    }
+
     function draw() {
       scheduled = false;
       var pp = pagePx();
@@ -118,35 +151,40 @@
       var pages = pageCountFromHeight(h, pp);
       totalPages = pages;
       curPage = computeCurrentPage(pp, pages);
-
-      // vždy aktualizuj stavový řádek (i když se linky nepřekreslují)
       setStatus(pages);
 
       if (!enabled) { overlay.innerHTML = ''; overlay.style.display = 'none'; return; }
       overlay.style.display = 'block';
-
-      // překresli jen když se změnil počet stran nebo výška strany (výkon)
-      var sig = pages + '@' + Math.round(pp);
-      if (sig === lastSig && overlay.childNodes.length) return;
-      lastSig = sig;
-
       overlay.innerHTML = '';
-      // číslo strany pro každou stranu (vpravo nahoře v oblasti strany)
+
+      // spočítej zlomy: ideál k*pp posunutý do mezery mezi řádky/odstavci
+      var boxes = getLineBoxes();
+      var breaks = [];
+      var prev = 0;
+      for (var k = 1; k < pages; k++) {
+        var y = snapToGap(k * pp, boxes);
+        if (y <= prev + 8) y = k * pp;  // ochrana proti překryvu
+        breaks.push(y);
+        prev = y;
+      }
+
+      // číslo strany nahoře v oblasti každé strany
       for (var i = 0; i < pages; i++) {
+        var topY = (i === 0) ? 6 : (breaks[i - 1] + 6);
         var num = document.createElement('div');
         num.className = 'lpg-pagenum';
-        num.style.top = (i * pp + 6) + 'px';
+        num.style.top = topY + 'px';
         num.textContent = 'strana ' + (i + 1);
         overlay.appendChild(num);
       }
-      // dělicí linka na konci každé strany kromě poslední
-      for (var j = 1; j < pages; j++) {
+      // dělicí linka na konci každé strany (leží v mezeře mezi řádky)
+      for (var j = 0; j < breaks.length; j++) {
         var line = document.createElement('div');
         line.className = 'lpg-line';
-        line.style.top = (j * pp) + 'px';
+        line.style.top = breaks[j] + 'px';
         var tag = document.createElement('span');
         tag.className = 'lpg-line-tag';
-        tag.textContent = 'konec strany ' + j;
+        tag.textContent = 'konec strany ' + (j + 1);
         line.appendChild(tag);
         overlay.appendChild(line);
       }
@@ -212,6 +250,7 @@
     countWords: countWords,
     normostrany: normostrany,
     pageCountFromHeight: pageCountFromHeight,
+    snapToGap: snapToGap,
     create: create
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

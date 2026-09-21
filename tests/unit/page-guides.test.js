@@ -58,3 +58,29 @@ describe('page-guides — počet A4 stran z výšky', () => {
     expect(PG.pageCountFromHeight(5000, 0)).toBe(1);
   });
 });
+
+describe('page-guides — snapToGap (zlom nesmí protnout text)', () => {
+  // řádky vysoké 20px s 5px mezerou: [0-20],[25-45],[50-70]
+  const boxes = [
+    { top: 0, bottom: 20 },
+    { top: 25, bottom: 45 },
+    { top: 50, bottom: 70 },
+  ];
+  test('ideál v mezeře mezi řádky se nemění', () => {
+    expect(PG.snapToGap(22, boxes)).toBe(22); // mezera 20..25
+  });
+  test('ideál uvnitř řádku se posune PŘED tento řádek', () => {
+    expect(PG.snapToGap(35, boxes)).toBe(24); // uvnitř 25..45 → top-1
+  });
+  test('ideál na začátku (před prvním řádkem) zůstává', () => {
+    // 0 není < 0 (top prvního je 0) a 0 <= bottom 20 → uvnitř → top-1 = -1
+    expect(PG.snapToGap(0, boxes)).toBe(-1);
+  });
+  test('ideál za posledním řádkem zůstává', () => {
+    expect(PG.snapToGap(120, boxes)).toBe(120);
+  });
+  test('prázdné boxy → vrátí ideál beze změny', () => {
+    expect(PG.snapToGap(300, [])).toBe(300);
+    expect(PG.snapToGap(300, null)).toBe(300);
+  });
+});
