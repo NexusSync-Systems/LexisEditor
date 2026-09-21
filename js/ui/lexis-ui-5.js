@@ -587,13 +587,13 @@ Object.assign(LexisUI.prototype, {
         const imgRight = this._hfImages['right'];
 
         if (pl) pl.innerHTML = eIco(imgLeft
-            ? `<img src="${imgLeft}" style="max-height:36px; object-fit:contain;"><br>${resolve(left)}`
+            ? `<img src="${imgLeft}" style="max-height:50px; max-width:180px; object-fit:contain;"><br>${resolve(left)}`
             : resolve(left) || '<span style="color:#ddd6cb">—</span>');
         if (pc) pc.innerHTML = eIco(imgCenter
-            ? `<img src="${imgCenter}" style="max-height:36px; object-fit:contain;"><br>${resolve(center)}`
+            ? `<img src="${imgCenter}" style="max-height:50px; max-width:180px; object-fit:contain;"><br>${resolve(center)}`
             : resolve(center) || '<span style="color:#ddd6cb">—</span>');
         if (pr) pr.innerHTML = eIco(imgRight
-            ? `<img src="${imgRight}" style="max-height:36px; object-fit:contain;"><br>${resolve(right)}`
+            ? `<img src="${imgRight}" style="max-height:50px; max-width:180px; object-fit:contain;"><br>${resolve(right)}`
             : resolve(right) || '<span style="color:#ddd6cb">—</span>');
 
         if (previewEl) previewEl.style.fontSize = fontSize;
@@ -652,18 +652,27 @@ Object.assign(LexisUI.prototype, {
         const paddingMap = { compact: '5mm 15mm', normal: '10mm 15mm', tall: '15mm 15mm' };
         const padding = paddingMap[height] || '10mm 15mm';
 
-        const buildCellHtml = (text, imgSrc, align) => {
-            let html = `<div style="flex:1; text-align:${align}; font-family:${fontFamily}; font-size:${fontSize}; color:${textColor}; white-space:pre-line;">`;
-            if (imgSrc) html += `<img src="${imgSrc}" style="max-height:40px; max-width:120px; object-fit:contain; display:block; margin-bottom:3px; ${align === 'right' ? 'margin-left:auto;' : align === 'center' ? 'margin:0 auto 3px auto;' : ''}"><br>`;
-            html += resolve(text) + '</div>';
-            return html;
+        // Čistá „hlavičková" sazba: logo v rozumné velikosti + text s klidným
+        // řádkováním. Mřížka 1fr / auto / 1fr → střed zabere jen potřebné místo,
+        // levý a pravý díl se dělí o zbytek; prázdné buňky nic nezabírají.
+        const buildCell = (text, imgSrc, align) => {
+            const cross = align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start';
+            let inner = '';
+            if (imgSrc) {
+                inner += `<img src="${imgSrc}" style="max-height:60px; max-width:220px; width:auto; height:auto; object-fit:contain; display:block;">`;
+            }
+            const txt = resolve(text);
+            if (txt && txt.trim()) {
+                inner += `<div style="white-space:pre-line; line-height:1.4;${imgSrc ? ' margin-top:5px;' : ''}">${txt}</div>`;
+            }
+            return `<div style="display:flex; flex-direction:column; justify-content:center; align-items:${cross}; text-align:${align}; min-width:0;">${inner}</div>`;
         };
 
-        const borderStyle = showLine ? `border-bottom: 1px solid ${lineColor};` : '';
-        const areaHtml = `<div style="display:flex; align-items:center; gap:10px; padding:${padding}; background:${bgColor}; ${borderStyle}">
-            ${buildCellHtml(left, this._hfImages['left'], 'left')}
-            ${buildCellHtml(center, this._hfImages['center'], 'center')}
-            ${buildCellHtml(right, this._hfImages['right'], 'right')}
+        const borderStyle = showLine ? `border-bottom:1px solid ${lineColor}; padding-bottom:8px;` : '';
+        const areaHtml = `<div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; column-gap:18px; padding:${padding}; background:${bgColor}; font-family:${fontFamily}; font-size:${fontSize}; color:${textColor}; letter-spacing:0.01em; ${borderStyle}">
+            ${buildCell(left, this._hfImages['left'], 'left')}
+            ${buildCell(center, this._hfImages['center'], 'center')}
+            ${buildCell(right, this._hfImages['right'], 'right')}
         </div>`;
 
         const areaId = this._currentHFTarget === 'header' ? 'header-area' : 'footer-area';
