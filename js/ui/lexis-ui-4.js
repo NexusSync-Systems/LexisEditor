@@ -1353,10 +1353,18 @@ Object.assign(LexisUI.prototype, {
                 if (file.size > 1.5 * 1024 * 1024) { this.customAlert('Logo je příliš velké (max 1,5 MB).'); return; }
                 const reader = new FileReader();
                 reader.onload = (ev) => {
-                    logoData = String(ev.target.result || '');
-                    if (window.LexisLetterhead && window.LexisLetterhead.safeLogo(logoData)) {
-                        preview.innerHTML = eIco(`<img src="${logoData}" style="max-width:100%;max-height:100%;object-fit:contain;">`);
-                    } else { logoData = ''; this.customAlert('Nepodporovaný formát obrázku.'); }
+                    const raw = String(ev.target.result || '');
+                    const show = (dataUrl) => {
+                        logoData = dataUrl;
+                        if (window.LexisLetterhead && window.LexisLetterhead.safeLogo(logoData)) {
+                            preview.innerHTML = eIco(`<img src="${logoData}" style="max-width:100%;max-height:100%;object-fit:contain;">`);
+                        } else { logoData = ''; this.customAlert('Nepodporovaný formát obrázku.'); }
+                    };
+                    // Automaticky očisti logo (odstraň bílé pozadí + ořízni), ať v hlavičce
+                    // nevypadá jako vložený obrázek. Při chybě → původní.
+                    if (window.LexisLogoClean && window.LexisLogoClean.cleanLogo) {
+                        window.LexisLogoClean.cleanLogo(raw).then(show).catch(() => show(raw));
+                    } else { show(raw); }
                 };
                 reader.readAsDataURL(file);
             };

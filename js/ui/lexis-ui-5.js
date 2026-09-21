@@ -609,11 +609,20 @@ Object.assign(LexisUI.prototype, {
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (e) => {
-            const dataUrl = e.target.result;
-            this._hfImages[position] = dataUrl;
-            const imgEl = document.getElementById(`hf-img-${position}`);
-            if (imgEl) { imgEl.src = dataUrl; imgEl.style.display = 'block'; }
-            this.updateHFPreview();
+            const raw = e.target.result;
+            const apply = (dataUrl) => {
+                this._hfImages[position] = dataUrl;
+                const imgEl = document.getElementById(`hf-img-${position}`);
+                if (imgEl) { imgEl.src = dataUrl; imgEl.style.display = 'block'; }
+                this.updateHFPreview();
+            };
+            // Automaticky očisti logo: odstraň (bílé) pozadí a těsně ořízni,
+            // ať není poznat, že jde o vložený obrázek. Při chybě → původní.
+            if (window.LexisLogoClean && window.LexisLogoClean.cleanLogo) {
+                window.LexisLogoClean.cleanLogo(raw).then(apply).catch(() => apply(raw));
+            } else {
+                apply(raw);
+            }
         };
         reader.readAsDataURL(file);
         input.value = ''; // reset so same file can be picked again
