@@ -1702,3 +1702,64 @@ body.web-layout .lexis-page-guides,
 body.reading-mode .lexis-page-guides,
 body.pdf-active .lexis-page-guides { display: none !important; }
 @media print { .lexis-page-guides { display: none !important; } }
+
+/* ── Živý náhled skutečných stránek (A4) — režim „Tisk" ──────────────────────
+ * Read-only stránkový náhled: skutečné A4 listy za sebou s mezerou, na každé
+ * stejné záhlaví + zápatí se „Strana X z Y". Řízeno js/core/paginated-view.js.
+ * Čistě vizuální — do exportu (body.pdf-active) ani tisku se nedostane.
+ */
+.lex-paginated {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+    width: 100%;
+    padding: 24px 0 60px;
+}
+body.lex-paginated-on .lex-paginated { display: flex; }
+body.lex-paginated-on #editor-wrapper { display: none !important; }
+
+.lex-sheet {
+    width: 210mm;
+    height: 297mm;
+    background: #fff;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+    border: 1px solid #ddd6cb;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+/* tělo strany zdědí formátování přes třídu ql-editor; vyplní zbytek listu */
+.lex-sheet .lex-sheet-body {
+    flex: 1 1 auto;
+    overflow: hidden;
+    min-height: 0;
+}
+/* naklonované záhlaví/zápatí nejsou editovatelné → žádné hover/focus rámečky */
+.lex-sheet .lex-sheet-header,
+.lex-sheet .lex-sheet-footer {
+    pointer-events: none;
+    flex-shrink: 0;
+}
+.lex-sheet .lpg-sheet-num {
+    position: absolute;
+    top: 6px; right: 10px;
+    font: 700 9px/1 system-ui, -apple-system, sans-serif;
+    color: #b7ad9f;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    pointer-events: none;
+}
+
+/* při náhledu odsazení a šedé pozadí „stolu" jako u tisku */
+body.lex-paginated-on .editor-scroll { background: #e0dbd3; }
+
+/* Export/tisk NIKDY nesmí použít náhled — vždy skutečný #editor-wrapper */
+body.pdf-active .lex-paginated { display: none !important; }
+body.pdf-active #editor-wrapper { display: flex !important; }
+@media print {
+    .lex-paginated { display: none !important; }
+    #editor-wrapper { display: flex !important; }
+}

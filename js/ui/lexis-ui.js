@@ -76,6 +76,7 @@ class LexisUI {
         this.initActiveDocumentState();
         this.initRibbonTooltips();
         this.initPageGuides();
+        this.initPaginatedView();
     }
 
     bindEvents() {
@@ -1548,6 +1549,15 @@ class LexisUI {
         } catch (e) { console.warn('[PageGuides] init selhal', e); }
     }
 
+    initPaginatedView() {
+        try {
+            const wrapper = document.getElementById('editor-wrapper');
+            const quill = this.core && this.core.quill;
+            if (!wrapper || !window.LexisPaginated) return;
+            this._paginated = window.LexisPaginated.create({ wrapper: wrapper, quill: quill });
+        } catch (e) { console.warn('[Paginated] init selhal', e); }
+    }
+
     togglePageGuides(force) {
         if (!this._pageGuides) return false;
         const on = (typeof force === 'boolean') ? force : !this._pageGuides.isEnabled();
@@ -1568,10 +1578,14 @@ class LexisUI {
         if (mode === 'normal' || mode === this._currentViewMode) {
             // Toggle off — return to normal
             this._currentViewMode = 'normal';
+            if (this._paginated) this._paginated.disable();
+            if (this._pageGuides) this._pageGuides.refresh();
             return;
         }
 
         this._currentViewMode = mode;
+
+        if (mode !== 'print' && this._paginated) this._paginated.disable();
 
         if (mode === 'reading') {
             document.body.classList.add('reading-mode');
@@ -1581,6 +1595,7 @@ class LexisUI {
             document.body.classList.add('print-layout');
             const btn = document.getElementById('view-btn-print');
             if (btn) btn.classList.add('view-mode-active');
+            if (this._paginated) this._paginated.enable();
         } else if (mode === 'web') {
             document.body.classList.add('web-layout');
             const btn = document.getElementById('view-btn-web');
