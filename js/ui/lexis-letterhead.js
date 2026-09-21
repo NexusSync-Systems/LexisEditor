@@ -37,14 +37,16 @@
         const nameFull = [p.title, p.name].filter(Boolean).join(' ');
         const firm = p.firm || '';
         const mainName = firm || nameFull || '';
+        // Role: explicitní `role`, jinak u profilu s ev. č. ČAK doplň „advokát".
+        const roleToken = p.role || (p.license ? 'advokát' : '');
         const lines = [];
         if (mainName) lines.push('<div style="font-weight:700; color:#23201b;">' + esc(mainName) + '</div>');
         if (firm && nameFull) {
             const sub = [nameFull];
-            if (p.role) sub.push(p.role); else if (p.license) sub.push('advokát');
+            if (roleToken) sub.push(roleToken);
             lines.push('<div>' + sub.map(esc).join(' · ') + '</div>');
-        } else if (p.role) {
-            lines.push('<div>' + esc(p.role) + '</div>');
+        } else if (roleToken) {
+            lines.push('<div>' + esc(roleToken) + '</div>');
         }
         if (p.address) lines.push('<div>' + esc(p.address) + '</div>');
         const reg = [];
