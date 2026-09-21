@@ -15,6 +15,7 @@
     <!-- Libraries (lokálně přibalené — aplikace běží i offline, bez CDN) -->
     <link href="css/vendor/quill.snow.css" rel="stylesheet">
     <script src="js/vendor/quill.js"></script>
+    <script src="js/core/paste-styles.js"></script>
     <script>
         // Pojistka pro knihovny s CommonJS exportem v prostředí Electronu.
         window.temp_module = window.module;
@@ -891,6 +892,7 @@
     <div id="editor-context-menu" class="custom-context-menu" style="min-width: 220px;">
         <div class="context-menu-item" onclick="exec('copy')"><span class="icon"><svg width="15" height="15" style="display:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5.5 15H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v.5"/></svg></span> Kopírovat <span style="margin-left:auto; font-size:10px; color:#a09a92;">Cmd+C</span></div>
         <div class="context-menu-item" onclick="exec('paste')"><span class="icon"><svg width="15" height="15" style="display:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5.5" width="14" height="14.5" rx="2"/><path d="M9 5.5V4.2A1.2 1.2 0 0 1 10.2 3h3.6A1.2 1.2 0 0 1 15 4.2V5.5z"/><path d="M12 10v5M9.5 12.5l2.5 2.5 2.5-2.5"/></svg></span> Vložit <span style="margin-left:auto; font-size:10px; color:#a09a92;">Cmd+V</span></div>
+        <div class="context-menu-item" onclick="exec('pasteText')"><span class="icon">T</span> Vložit jako čistý text <span style="margin-left:auto; font-size:10px; color:#a09a92;">⇧⌘V</span></div>
         <div class="context-menu-item" onclick="exec('cut')"><span class="icon"><svg width="15" height="15" style="display:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="7" r="2"/><circle cx="6.5" cy="17" r="2"/><path d="M8.3 8.2L20 18M8.3 15.8L20 6"/></svg></span> Vyjmout <span style="margin-left:auto; font-size:10px; color:#a09a92;">Cmd+X</span></div>
         
         <div class="context-menu-sep"></div>

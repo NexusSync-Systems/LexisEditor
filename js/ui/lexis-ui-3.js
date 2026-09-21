@@ -1012,6 +1012,19 @@ Object.assign(LexisUI.prototype, {
         // Historie (Zpět/Vpřed) a schránka (Kopírovat/Vyjmout/Vložit) NEJSOU formáty Quillu.
         if (format === 'undo') { if (q.history) q.history.undo(); return; }
         if (format === 'redo') { if (q.history) q.history.redo(); return; }
+        if (format === 'pasteText') {
+            (async () => {
+                try {
+                    let t = '';
+                    if (navigator.clipboard && navigator.clipboard.readText) t = await navigator.clipboard.readText();
+                    const r = q.getSelection(true) || { index: q.getLength(), length: 0 };
+                    if (r.length) q.deleteText(r.index, r.length, 'user');
+                    q.insertText(r.index, t || '', 'user');
+                    q.setSelection(r.index + (t || '').length, 0, 'silent');
+                } catch (e) { /* schránka může být blokovaná */ }
+            })();
+            return;
+        }
         if (format === 'copy' || format === 'cut' || format === 'paste') {
             try { q.focus(); document.execCommand(format); } catch (e) { /* schránka může být omezená */ }
             return;

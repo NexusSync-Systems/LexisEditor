@@ -136,11 +136,42 @@ class LexisCore {
                 }
                 const range = this.quill.getSelection(true) || { index: this.quill.getLength(), length: 0 };
                 if (range.length) this.quill.deleteText(range.index, range.length, 'user');
-                this.quill.clipboard.dangerouslyPasteHTML(range.index, clean, 'user');
+                const _pasteAt = range.index;
+                const _lenBefore = this.quill.getLength();
+                this.quill.clipboard.dangerouslyPasteHTML(_pasteAt, clean, 'user');
+                // Wordovský přepínač stylů vložení (Zdroj / Sloučit / Jen text).
+                try {
+                    if (!this._pasteOptions && window.LexisPasteStyles) {
+                        this._pasteOptions = window.LexisPasteStyles.createController(this.quill);
+                    }
+                    if (this._pasteOptions) {
+                        const _inserted = this.quill.getLength() - _lenBefore;
+                        const _plain = (e.clipboardData && e.clipboardData.getData('text/plain')) || '';
+                        this._pasteOptions.show(_pasteAt, _inserted, clean, _plain);
+                    }
+                } catch (e2) { /* přepínač je nadstavba — bez něj vložení funguje dál */ }
             } catch (err) {
                 console.error('[LexisCore] Chyba při sanitizaci vloženého obsahu:', err);
             }
         }, true);
+
+        // Vložit jako čistý text — Cmd/Ctrl+Shift+V (obejde formátování).
+        this.quill.root.addEventListener('keydown', (e) => {
+            const mod = e.metaKey || e.ctrlKey;
+            if (mod && e.shiftKey && (e.key === 'v' || e.key === 'V')) {
+                e.preventDefault();
+                (async () => {
+                    try {
+                        let t = '';
+                        if (navigator.clipboard && navigator.clipboard.readText) t = await navigator.clipboard.readText();
+                        const r = this.quill.getSelection(true) || { index: this.quill.getLength(), length: 0 };
+                        if (r.length) this.quill.deleteText(r.index, r.length, 'user');
+                        this.quill.insertText(r.index, t || '', 'user');
+                        this.quill.setSelection(r.index + (t || '').length, 0, 'silent');
+                    } catch (err) { /* schránka může být blokovaná */ }
+                })();
+            }
+        });
     }
 
     registerBlots() {
