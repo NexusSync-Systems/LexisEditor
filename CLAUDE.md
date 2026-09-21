@@ -193,3 +193,42 @@ Seřazeno podle priority. Backendové položky (LexisLocal) jsou v CLAUDE.md tam
   s heslem) se přes `lockScreen.showLockScreen()` nemusí zobrazit správně. **K rozhodnutí:**
   sjednotit na jeden zámek nebo přejmenovat ID (vyžaduje pochopení obou flow + živý test).
   Fialový blok B jsem zatím nechal (security-kritický, nesahat naslepo).
+
+## Firemní hlavička (letterhead) — recept pro rychlé/spolehlivé vložení
+
+Cíl: vložit do dokumentu čistou firemní hlavičku (logo + identita kanceláře) tak,
+aby to zvládl kdokoli na pár kliknutí — bez designování a bez ručního výběru souboru.
+
+Architektura (jeden zdroj pravdy = profil kanceláře):
+- Profil se ukládá do `settings` (IndexedDB) přes `readLawyerProfile()` / `showProfileModal()`
+  (`js/ui/lexis-ui-4.js`, `js/ui/lexis-ui-1.js`). Pole: title, name, firm, role, license
+  (ev. č. ČAK), address, ico, dic, tel, email, web, isds, logo, auto.
+- HTML hlavičky/patičky generuje `window.LexisLetterhead.buildHeaderHtml/buildFooterHtml`
+  (`js/ui/lexis-letterhead.js`): logo vlevo, identita + adresa + IČO/ČAK + kontakt vpravo,
+  jemná linka. Tabulkové rozvržení (DOCX-safe).
+- Logo kanceláře je v `window.LEXIS_FIRM_LOGO` (`js/core/lexis-firm-logo.js`) — data URL,
+  jeden zdroj pro tlačítko i demo-vyplnění.
+
+Jak vložit hlavičku (postup, který stačí následovat):
+1. Jednou nastav profil: `⚙️ Nastavení → Profil / hlavičkový papír`. Je-li prázdný, klikni
+   „Vyplnit ukázkovými údaji (DNP Legal)" (vyplní údaje kanceláře i logo) → Uložit profil.
+2. V otevřeném dokumentu klikni v pásu karet **Vložit → Firemní hlavička**
+   (globální `insertLetterhead()`), nebo **Vložit → Záhlaví → karta Šablony →
+   „Firemní hlavička (z profilu)" → Použít**.
+3. Do nových dokumentů se hlavička vkládá automaticky (přepínač „Automaticky vkládat" v profilu).
+
+Programově (např. z konzole / testu): `lexisUI.insertLetterhead()` složí a vloží hlavičku
+z profilu a uloží stav dokumentu. `lexisUI.insertFirmLogo('left')` vloží jen logo do
+editoru záhlaví (bere `window.LEXIS_FIRM_LOGO`).
+
+Pojistky (aby to nešlo pokazit):
+- Každé vložené logo se automaticky očistí (průhledné pozadí + ořez) přes
+  `window.LexisLogoClean.cleanLogo` — v hlavičce nevypadá jako „nalepený obrázek".
+- Poškozený / neúplný obrázek se odmítne (`window.LexisLogoClean.isDecodable`) —
+  nevznikne „duch"/šum. Platí pro editor záhlaví i nahrání loga v profilu.
+- Rozvržení je mřížka/tabulka (ne tři `flex:1` sloupce), takže se text nemačká.
+
+Pozor (vývoj): dev build načítá změněné soubory (JS/HTML) až po **restartu aplikace**,
+ne přes „Zobrazení → Načíst znovu" (to jde z cache). Po úpravě kódu aplikaci restartuj.
+
+Logo: `logo-ak.png` a `logo-dnp-legal.png` v kořeni repozitáře (čisté, průhledné PNG).

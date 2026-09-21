@@ -90,7 +90,24 @@
     });
   }
 
-  var api = { keyAndBBox: keyAndBBox, cleanLogo: cleanLogo };
+  // Ověří, že obrázek jde plně dekódovat (odhalí useknuté/poškozené soubory,
+  // které se v prohlížeči „napůl" vykreslí jako šum). Vrací Promise<boolean>.
+  function isDecodable(dataUrl) {
+    return new Promise(function (res) {
+      if (typeof document === 'undefined' || !dataUrl) { res(true); return; }
+      var img = new Image();
+      if (typeof img.decode === 'function') {
+        img.src = dataUrl;
+        img.decode().then(function () { res(true); }).catch(function () { res(false); });
+      } else {
+        img.onload = function () { res(true); };
+        img.onerror = function () { res(false); };
+        img.src = dataUrl;
+      }
+    });
+  }
+
+  var api = { keyAndBBox: keyAndBBox, cleanLogo: cleanLogo, isDecodable: isDecodable };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   if (typeof window !== 'undefined') window.LexisLogoClean = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

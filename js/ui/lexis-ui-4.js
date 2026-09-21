@@ -1362,9 +1362,17 @@ Object.assign(LexisUI.prototype, {
                     };
                     // Automaticky očisti logo (odstraň bílé pozadí + ořízni), ať v hlavičce
                     // nevypadá jako vložený obrázek. Při chybě → původní.
-                    if (window.LexisLogoClean && window.LexisLogoClean.cleanLogo) {
-                        window.LexisLogoClean.cleanLogo(raw).then(show).catch(() => show(raw));
-                    } else { show(raw); }
+                    const proceed = () => {
+                        if (window.LexisLogoClean && window.LexisLogoClean.cleanLogo) {
+                            window.LexisLogoClean.cleanLogo(raw).then(show).catch(() => show(raw));
+                        } else { show(raw); }
+                    };
+                    if (window.LexisLogoClean && window.LexisLogoClean.isDecodable) {
+                        window.LexisLogoClean.isDecodable(raw).then((ok) => {
+                            if (!ok) { this.customAlert('⚠️ Logo je poškozené nebo neúplné. Zkus jiný soubor (PNG/JPG/SVG).'); return; }
+                            proceed();
+                        });
+                    } else { proceed(); }
                 };
                 reader.readAsDataURL(file);
             };
@@ -1375,18 +1383,24 @@ Object.assign(LexisUI.prototype, {
             if (demoBtn) demoBtn.onclick = () => {
                 const setV = (id, v) => { const el = modal.querySelector(id); if (el) el.value = v; };
                 setV('#prof-title', 'JUDr.');
-                setV('#prof-name', 'Zdeněk Dias, Ph.D.');
-                setV('#prof-firm', 'Dias, Novák & Partneři, advokátní kancelář s.r.o.');
-                setV('#prof-role', 'advokát (Managing Partner)');
-                setV('#prof-ico', '12345678');
-                setV('#prof-dic', 'CZ12345678');
+                setV('#prof-name', 'Zdeněk Dias');
+                setV('#prof-firm', 'Dias, Novák & Partneři, advokátní kancelář, s.r.o.');
+                setV('#prof-role', 'advokát');
+                setV('#prof-license', '18742');
+                setV('#prof-ico', '09876543');
+                setV('#prof-dic', 'CZ09876543');
                 setV('#prof-isds', 'ab1cde2');
-                setV('#prof-address', 'Karolinská 661/4, 186 00 Praha 8 - Karlín');
-                setV('#prof-tel', '+420 222 333 444');
-                setV('#prof-email', 'kancelar@dnplegal.cz');
+                setV('#prof-address', 'Údolní 33, 602 00 Brno');
+                setV('#prof-tel', '+420 542 210 111');
+                setV('#prof-email', 'ak@diasnovak.cz');
                 setV('#prof-web', 'www.dnplegal.cz');
-                setV('#prof-city', 'Praze');
-                setV('#prof-sig', 'JUDr. Zdeněk Dias, Ph.D., advokát');
+                setV('#prof-city', 'Brně');
+                setV('#prof-sig', 'JUDr. Zdeněk Dias, advokát');
+                // Nastav i logo kanceláře (sdílené), ať je profil hotový na jedno kliknutí.
+                if (window.LEXIS_FIRM_LOGO && window.LexisLetterhead && window.LexisLetterhead.safeLogo(window.LEXIS_FIRM_LOGO)) {
+                    logoData = window.LEXIS_FIRM_LOGO;
+                    preview.innerHTML = eIco('<img src="' + logoData + '" style="max-width:100%;max-height:100%;object-fit:contain;">');
+                }
             };
             modal.querySelector('#prof-cancel').onclick = () => document.body.removeChild(overlay);
             modal.querySelector('#prof-save').onclick = async () => {

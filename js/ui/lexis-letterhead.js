@@ -2,18 +2,18 @@
 /**
  * LexisLetterhead — sestavení „hlavičkového papíru" advokáta ze uloženého profilu.
  * Z profilu (jméno/AK, sídlo, IČO/DIČ, ev. č. ČAK, kontakt, datová schránka, logo)
- * vygeneruje HTML do záhlaví a patičky dokumentu — tak, jak je u advokátních podání
- * zvykem: nahoře minimální identita (logo + název AK + jméno · role) vycentrovaná
- * s linkou; všechny registrační a kontaktní údaje dole v tenké patičce.
- * Vkládá se automaticky do nových dokumentů (viz resetHeaderFooterDOM v lexis-ui),
- * s možností vypnout přepínačem v profilu.
+ * vygeneruje HTML do záhlaví a patičky dokumentu.
+ *
+ * Rozvržení hlavičky: čistý „hlavičkový papír" — logo vlevo, identita a údaje
+ * kanceláře vpravo zarovnané, pod tím jemná linka. Bez loga se identita zarovná
+ * vlevo přes celou šířku. Tabulkové rozvržení (ne flexbox), aby spolehlivě přežilo
+ * i export do Wordu (DOCX). Vkládá se automaticky do nových dokumentů
+ * (viz resetHeaderFooterDOM), s možností vypnout přepínačem v profilu.
  */
 (function () {
     'use strict';
 
-    // Seznam polí profilu (klíče v úložišti settings mají prefix `lawyer-` —
-    // ponechány kvůli zpětné kompatibilitě uložených profilů). `role` (funkce/
-    // profese) je obecné a volitelné; `license` (ev. č. ČAK) a `isds` jsou právní.
+    // Seznam polí profilu (klíče v úložišti settings mají prefix `lawyer-`).
     const FIELDS = ['title', 'name', 'firm', 'role', 'license', 'address', 'ico', 'dic', 'tel', 'email', 'web', 'isds', 'logo', 'auto'];
 
     function esc(s) {
@@ -32,72 +32,63 @@
         return /^data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);/i.test(s) ? s : '';
     }
 
-    // Sestaví HTML záhlaví: vycentrované logo + název AK + řádek „jméno · role",
-    // pod tím linka přes celou šířku. Minimální — detaily patří do patičky.
-    // Mezihodnoty jsou RAW; escapuje se JEN na výstupu (žádné dvojité escapování).
-    function buildHeaderHtml(p) {
-        if (!hasContent(p)) return '';
+    // Řádky identity vpravo (název/jméno · role, adresa, IČO · DIČ · ČAK, tel · e-mail · web).
+    function identityLines(p) {
         const nameFull = [p.title, p.name].filter(Boolean).join(' ');
         const firm = p.firm || '';
         const mainName = firm || nameFull || '';
-
-        // Sub-řádek: je-li vyplněná AK, přidá se jméno; pak role/profese.
-        // Historicky se předpokládal „advokát" — ten zachováme jen u profilů
-        // s ev. č. ČAK (to má jen advokát). Obecný uživatel může mít vlastní `role`.
-        const subParts = [];
-        if (firm && nameFull) subParts.push(nameFull);
-        if (p.role) subParts.push(p.role);
-        else if (p.license) subParts.push('advokát');
-
-        const logo = safeLogo(p.logo);
-        if (!mainName && !logo && !subParts.length) return '';
-
-        const logoHtml = logo
-            ? `<div style="margin-bottom:6px;"><img src="${logo}" alt="logo" style="max-height:66px; max-width:190px; vertical-align:middle;"></div>`
-            : '';
-        const nameHtml = mainName
-            ? `<div style="font-weight:700; font-size:13.5pt; color:#111; line-height:1.2;">${esc(mainName)}</div>`
-            : '';
-        const subHtml = subParts.length
-            ? `<div style="font-size:9pt; color:#666; margin-top:2px;">${subParts.map(esc).join(' · ')}</div>`
-            : '';
-
-        // Tabulkové rozvržení (ne flexbox) — spolehlivě přežije i export do Wordu (DOCX).
-        return `
-<table style="width:100%; border-collapse:collapse; font-family:'Times New Roman', serif; border-bottom:1.5px solid #2b2926;">
-    <tr>
-        <td style="text-align:center; padding-bottom:9px;">${logoHtml}${nameHtml}${subHtml}</td>
-    </tr>
-</table>`.trim();
-    }
-
-    // Patička: všechny kontaktní a registrační údaje, drobně, vycentrovaně,
-    // s linkou nahoře. 1. řádek = sídlo · tel · e-mail · web,
-    // 2. řádek = ev. č. ČAK · IČO · DIČ · datová schránka.
-    function buildFooterHtml(p) {
-        if (!hasContent(p)) return '';
+        const lines = [];
+        if (mainName) lines.push('<div style="font-weight:700; color:#23201b;">' + esc(mainName) + '</div>');
+        if (firm && nameFull) {
+            const sub = [nameFull];
+            if (p.role) sub.push(p.role); else if (p.license) sub.push('advokát');
+            lines.push('<div>' + sub.map(esc).join(' · ') + '</div>');
+        } else if (p.role) {
+            lines.push('<div>' + esc(p.role) + '</div>');
+        }
+        if (p.address) lines.push('<div>' + esc(p.address) + '</div>');
+        const reg = [];
+        if (p.ico) reg.push('IČO ' + p.ico);
+        if (p.dic) reg.push('DIČ ' + p.dic);
+        if (p.license) reg.push('ev. č. ČAK ' + p.license);
+        if (reg.length) lines.push('<div>' + reg.map(esc).join(' · ') + '</div>');
         const contact = [];
-        if (p.address) contact.push(p.address);
         if (p.tel) contact.push('tel. ' + p.tel);
         if (p.email) contact.push(p.email);
         if (p.web) contact.push(p.web);
-        const reg = [];
-        if (p.license) reg.push('ev. č. ČAK ' + p.license);
-        if (p.ico) reg.push('IČO ' + p.ico);
-        if (p.dic) reg.push('DIČ ' + p.dic);
-        if (p.isds) reg.push('datová schránka ' + p.isds);
-
-        const sep = '&nbsp;&nbsp;·&nbsp;&nbsp;';
-        const l1 = contact.length ? `<div>${contact.map(esc).join(sep)}</div>` : '';
-        const l2 = reg.length ? `<div style="margin-top:2px;">${reg.map(esc).join(sep)}</div>` : '';
-        if (!l1 && !l2) return '';
-
-        // Tabulkové rozvržení (ne flexbox) — spolehlivě přežije i export do Wordu (DOCX).
-        return `
-<table style="width:100%; border-collapse:collapse; font-family:'Times New Roman', serif; border-top:1px solid #e0dbd3;">
-    <tr><td style="text-align:center; font-size:7.5pt; color:#888; padding-top:6px; line-height:1.6;">${l1}${l2}</td></tr>
-</table>`.trim();
+        if (contact.length) lines.push('<div>' + contact.map(esc).join(' · ') + '</div>');
+        return lines.join('');
     }
 
-    window.LexisLetterhead = { FIELDS, buildHeaderHtml, buildFooterHtml, hasContent, safeLogo };
+    // Hlavička: logo vlevo, identita vpravo, jemná linka pod tím.
+    function buildHeaderHtml(p) {
+        if (!hasContent(p)) return '';
+        const logo = safeLogo(p.logo);
+        const identity = identityLines(p);
+        if (!identity && !logo) return '';
+        const logoCell = logo
+            ? '<td style="vertical-align:middle; white-space:nowrap; padding-right:16px; width:1%;"><img src="' + logo + '" alt="logo" style="max-height:60px; max-width:220px; vertical-align:middle;"></td>'
+            : '';
+        const align = logo ? 'right' : 'left';
+        return ('<table style="width:100%; border-collapse:collapse; font-family:\'Segoe UI\',Arial,sans-serif; border-bottom:1px solid #ddd6cb;">'
+            + '<tr>'
+            + logoCell
+            + '<td style="vertical-align:middle; text-align:' + align + '; font-size:9.5pt; color:#4a453f; line-height:1.45; padding-bottom:8px;">' + identity + '</td>'
+            + '</tr>'
+            + '</table>');
+    }
+
+    // Patička: jen to, co není v hlavičce (datová schránka), drobně a vycentrovaně.
+    function buildFooterHtml(p) {
+        if (!hasContent(p)) return '';
+        const parts = [];
+        if (p.isds) parts.push('datová schránka ' + p.isds);
+        if (!parts.length) return '';
+        const sep = '&nbsp;&nbsp;·&nbsp;&nbsp;';
+        return ('<table style="width:100%; border-collapse:collapse; font-family:\'Segoe UI\',Arial,sans-serif; border-top:1px solid #e0dbd3;">'
+            + '<tr><td style="text-align:center; font-size:7.5pt; color:#888; padding-top:6px; line-height:1.6;">' + parts.map(esc).join(sep) + '</td></tr>'
+            + '</table>');
+    }
+
+    window.LexisLetterhead = { FIELDS, buildHeaderHtml, buildFooterHtml, hasContent, safeLogo, identityLines };
 })();
