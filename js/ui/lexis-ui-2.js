@@ -499,7 +499,7 @@ Object.assign(LexisUI.prototype, {
         const text = document.getElementById('sync-text');
         const status = document.getElementById('sync-status');
         if (icon) icon.innerHTML = (eIco(window.LexisIcons ? window.LexisIcons.sizeSvg(window.LexisIcons.get('ulozit'), 14) : '💾'));
-        if (text) text.innerText = 'Uloženo lokálně';
+        if (text) text.innerText = 'Šifrováno lokálně';
         if (status) status.style.color = '#5a8a4a';
         this.customAlert(
             '💾 <b>Data jsou uložena lokálně</b><br><br>'
