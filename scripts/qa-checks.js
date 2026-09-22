@@ -8,13 +8,19 @@
 const fs = require('fs');
 const path = require('path');
 const readAllJs = (root) => { const out = []; (function w(d){ for (const e of fs.readdirSync(d,{withFileTypes:true})){ const p=path.join(d,e.name); if(e.isDirectory()){ if(!/vendor|node_modules/.test(p)) w(p);} else if(e.name.endsWith('.js')) out.push(fs.readFileSync(p,'utf8')); } })(path.join(root,'js')); return out.join('\n'); };
+// Odstraní JS komentáře (blokové i řádkové), ať se detekce nechytá na texty
+// jako „electronAPI.xxx" uvnitř komentářů. Není string-aware, pro tyto skeny stačí;
+// řádkové komentáře vynechá u "://" (URL).
+function stripJsComments(s) {
+  return String(s).replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+}
 
 // electronAPI.X voláno rendererem, ale nevystaveno v preloadu (guardované optional API v allowlistu).
 const OPTIONAL_API = new Set(['saveFile']); // guardované + má fallback (viz saveDocument)
 function findMissingElectronApi(root) {
   const preload = fs.readFileSync(path.join(root,'preload.js'),'utf8');
   const html = fs.readFileSync(path.join(root,'index.html'),'utf8');
-  const src = readAllJs(root) + '\n' + html;
+  const src = stripJsComments(readAllJs(root)) + '\n' + html;
   const exposed = new Set([...preload.matchAll(/(?:^|[,{])\s*([A-Za-z_$][\w$]*)\s*:/gm)].map(m=>m[1]));
   const used = new Set([...src.matchAll(/electronAPI\.([A-Za-z_$][\w$]*)/g)].map(m=>m[1]));
   return [...used].filter(x => !exposed.has(x) && !OPTIONAL_API.has(x)).sort();
