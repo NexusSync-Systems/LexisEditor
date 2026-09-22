@@ -39,9 +39,6 @@
             // 4. Load Dynamic Content
             await lexisUI.loadDynamicTemplates();
             lexisUI.updateVersionDisplay();
-            // Zahřej cache profilu (hlavičkový papír), aby se auto-hlavička vložila
-            // i do PRVNÍHO nového dokumentu hned po spuštění (jinak byla cache prázdná).
-            try { await lexisUI.loadLetterheadProfile(); } catch (e) {}
         }
 
         // --- BRIDGE FUNCTIONS (Mapping Ribbon onclicks to SDK/UI) ---
