@@ -6,19 +6,21 @@ on:
   pull_request:
 
 jobs:
-  unit:
-    name: Jest (unit + DOCX/OOXML export)
+  test:
+    name: Syntax check + Jest (unit + DOCX/OOXML export)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
           cache: 'npm'
-      - name: Install deps
-        run: npm ci
+      - name: Install dependencies
+        run: npm install
+      - name: Syntax check (main + preload + core/ui)
+        run: node -e "const cp=require('child_process');const fs=require('fs');const walk=(d)=>fs.existsSync(d)?fs.readdirSync(d,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(d+'/'+e.name):(e.name.endsWith('.js')?[d+'/'+e.name]:[])):[];['main.js','preload.js',...walk('js')].forEach(f=>cp.execSync('node --check '+f));console.log('node --check OK')"
       - name: Run unit tests
-        run: npm test -- --ci
+        run: npm test
 
   e2e:
     name: Playwright E2E (renderer smoke)
@@ -27,10 +29,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: 20
           cache: 'npm'
-      - name: Install deps
-        run: npm ci
+      - name: Install dependencies
+        run: npm install
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: Run E2E (renderer smoke + funkční smoke)
@@ -44,8 +46,3 @@ jobs:
             playwright-report/
             test-results/
           if-no-files-found: ignore
-
-  # POZNÁMKA: plné Electron E2E (skutečný app proces) sem nepatří — LexisEditor
-  # je macOS Electron s macOS-only API (keychain/Touch ID). Pokud bude potřeba,
-  # přidá se samostatný job `runs-on: macos-latest`, který sestaví app a pustí
-  # `xvfb`-free macOS Electron test. Držíme mimo tento Linux CI.
