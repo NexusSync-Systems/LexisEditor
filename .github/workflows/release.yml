@@ -12,6 +12,7 @@ jobs:
     permissions:
       contents: write
     strategy:
+      fail-fast: false   # pád jedné platformy (např. macOS podpis) nezruší druhou
       matrix:
         os: [macos-latest, windows-latest]
     steps:
