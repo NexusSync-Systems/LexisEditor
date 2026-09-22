@@ -5,6 +5,8 @@ name: Build (unsigned macOS installer)
 # jen rychlý .dmg na vyzkoušení. Ostrý podepsaný release dělá release.yml.
 on:
   workflow_dispatch:
+  push:
+    tags: [ 'unsigned-*' ]
 
 jobs:
   build-mac-unsigned:
