@@ -144,7 +144,7 @@
     return '';
   }
   var KNOWN_FIELDS = ['title', 'nazev', 'name', 'heading', 'label', 'court', 'soud', 'source',
-    'spisova_znacka', 'spisovaZnacka', 'sp_zn', 'spzn', 'ecli', 'jednaci_cislo', 'cislo',
+    'spisova_znacka', 'spisovaZnacka', 'sp_zn', 'spzn', 'case_number', 'ecli', 'jednaci_cislo', 'cislo', 'subject', 'decision_date',
     'date', 'datum', 'rozhodnuti', 'decided', 'published', 'url', 'link', 'odkaz', 'href',
     'source_url', 'sourceUrl', 'snippet', 'text', 'excerpt', 'vyrez', 'content', 'summary',
     'preview', 'fragment'];
@@ -154,8 +154,14 @@
   function toArray(data) {
     if (Array.isArray(data)) return data;
     if (!data || typeof data !== 'object') return [];
-    var cand = data.results || data.items || data.data || data.judgments || data.laws || data.hits || data.documents;
+    // Obálka { success, data: { results:[...] } } (LawGPT) → rozbal vnitřní data.
+    if (data.data && typeof data.data === 'object' && !Array.isArray(data.data)) {
+      var innerArr = toArray(data.data);
+      if (innerArr.length) return innerArr;
+    }
+    var cand = data.results || data.items || data.judgments || data.laws || data.hits || data.documents;
     if (Array.isArray(cand)) return cand;
+    if (Array.isArray(data.data)) return data.data;
     // jediný objekt zabalíme jen tehdy, když skutečně vypadá jako výsledek
     // (nese aspoň jedno známé pole) — prázdné {} → žádné výsledky.
     return looksLikeResult(data) ? [data] : [];
@@ -165,8 +171,9 @@
     if (typeof it === 'string') return { title: '', meta: '', snippet: it, url: '' };
     var title = pick(it, ['title', 'nazev', 'name', 'heading', 'label']);
     var court = pick(it, ['court', 'soud', 'source']);
-    var spzn = pick(it, ['spisova_znacka', 'spisovaZnacka', 'sp_zn', 'spzn', 'ecli', 'jednaci_cislo', 'cislo']);
-    var date = pick(it, ['date', 'datum', 'rozhodnuti', 'decided', 'published']);
+    if (court && typeof court === 'object') court = court.name || court.nazev || court.code || '';
+    var spzn = pick(it, ['case_number', 'spisova_znacka', 'spisovaZnacka', 'sp_zn', 'spzn', 'jednaci_cislo', 'cislo', 'ecli']);
+    var date = pick(it, ['decision_date', 'date', 'datum', 'rozhodnuti', 'decided', 'published']);
     var url = pick(it, ['url', 'link', 'odkaz', 'href', 'source_url', 'sourceUrl']);
     var snippet = pick(it, ['snippet', 'text', 'excerpt', 'vyrez', 'content', 'summary', 'preview', 'fragment']);
     var metaParts = [court, spzn, date].filter(function (x) { return x; });
