@@ -179,7 +179,10 @@
     if (court && typeof court === 'object') court = court.name || court.nazev || court.code || '';
     var spzn = pick(it, ['case_number', 'spisova_znacka', 'spisovaZnacka', 'sp_zn', 'spzn', 'jednaci_cislo', 'cislo', 'ecli']);
     var date = pick(it, ['decision_date', 'date', 'datum', 'rozhodnuti', 'decided', 'published']);
+    var ecli = pick(it, ['ecli']);
     var url = pick(it, ['url', 'link', 'odkaz', 'href', 'source_url', 'sourceUrl']);
+    // Bez přímého odkazu poskytovatele → vyhledávací odkaz na ECLI/sp. zn. (research lead, ne deep-link).
+    if (!url) { var _q = ecli || spzn; if (_q) url = 'https://www.google.com/search?q=' + encodeURIComponent('"' + _q + '"'); }
     var snippet = pick(it, ['snippet', 'text', 'excerpt', 'vyrez', 'content', 'summary', 'preview', 'fragment']);
     var metaParts = [court, spzn, date].filter(function (x) { return x; });
     if (!title && spzn) title = String(spzn);

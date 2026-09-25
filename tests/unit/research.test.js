@@ -170,3 +170,22 @@ describe('Externí rešerše — by-provision a obálka odpovědi', () => {
     R().setActiveProvider('lawgpt');
   });
 });
+
+describe('Externí rešerše — odkaz na zdroj', () => {
+  test('normalizeItem doplní vyhledávací url z ECLI, když poskytovatel odkaz nedá', async () => {
+    nextJson = { success: true, data: { results: [
+      { ecli: 'ECLI:CZ:NS:2023:29.Cdo.1.2023', case_number: '29 Cdo 1/2023', court: { name: 'Nejvyšší soud' }, excerpt: 't' }
+    ] } };
+    const out = await R().findCaseLaw('x');
+    expect(out.results[0].url).toContain('google.com/search');
+    expect(decodeURIComponent(out.results[0].url)).toContain('ECLI:CZ:NS:2023:29.Cdo.1.2023');
+  });
+
+  test('explicitní url z odpovědi má přednost před fallbackem', async () => {
+    nextJson = { success: true, data: { results: [
+      { case_number: '1 As 2/2020', url: 'https://example.test/rozhodnuti/1', excerpt: 't' }
+    ] } };
+    const out = await R().findCaseLaw('x');
+    expect(out.results[0].url).toBe('https://example.test/rozhodnuti/1');
+  });
+});
