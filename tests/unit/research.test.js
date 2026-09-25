@@ -2,8 +2,8 @@
 // -----------------------------------------------------------------------------
 // Testy modulu Externí rešerše (js/providers/lexis-research.js).
 // Ověřuje: výchozí stav (VYPNUTO), registr poskytovatelů, sestavení URL pro
-// LawGPT, defenzivní normalizaci odpovědi, gating DirectCase (OAuth zatím
-// nepřipraven) a self-mount sekce nastavení. Běží v jsdom (viz jest.config).
+// LawGPT, defenzivní normalizaci odpovědi a self-mount sekce nastavení.
+// Běží v jsdom (viz jest.config).
 // -----------------------------------------------------------------------------
 
 // fetch v jsdom není — namockujeme před načtením modulu.
@@ -39,22 +39,18 @@ describe('Externí rešerše — stav a registr', () => {
     expect(R().activeId()).toBe('lawgpt');
   });
 
-  test('registr obsahuje lawgpt (zdarma) i directcase (premium)', () => {
-    expect(R().PROVIDER_ORDER).toEqual(['lawgpt', 'directcase']);
+  test('registr obsahuje lawgpt (zdarma, jediný poskytovatel)', () => {
+    expect(R().PROVIDER_ORDER).toEqual(['lawgpt']);
     expect(R().PROVIDERS.lawgpt.ready).toBe(true);
     expect(R().PROVIDERS.lawgpt.auth).toBe('none');
-    expect(R().PROVIDERS.directcase.ready).toBe(false);
-    expect(R().PROVIDERS.directcase.auth).toBe('oauth');
+    expect(R().PROVIDERS.directcase).toBeUndefined();
   });
 
-  test('setEnabled a setActiveProvider se persistují', () => {
+  test('setEnabled se persistuje a neznámý poskytovatel se ignoruje', () => {
     R().setEnabled(true);
     expect(R().isEnabled()).toBe(true);
-    R().setActiveProvider('directcase');
-    expect(R().activeId()).toBe('directcase');
-    // neexistujícího poskytovatele ignoruje
     R().setActiveProvider('nesmysl');
-    expect(R().activeId()).toBe('directcase');
+    expect(R().activeId()).toBe('lawgpt');
   });
 });
 
@@ -122,15 +118,6 @@ describe('Externí rešerše — normalizace odpovědi (defenzivní)', () => {
   });
 });
 
-describe('Externí rešerše — DirectCase gating', () => {
-  test('při aktivním DirectCase (nepřipraven) se dotaz odmítne s jasnou hláškou', async () => {
-    R().setActiveProvider('directcase');
-    await expect(R().findCaseLaw('x')).rejects.toThrow(/přihlášení/i);
-    // fetch se vůbec nesmí zavolat
-    expect(global.fetch).not.toHaveBeenCalled();
-  });
-});
-
 describe('Externí rešerše — self-mount nastavení', () => {
   test('mountSettings připojí sekci do #tab-settings a je idempotentní', () => {
     document.body.innerHTML = '<div id="tab-settings"></div>';
@@ -164,11 +151,6 @@ describe('Externí rešerše — by-provision a obálka odpovědi', () => {
     expect(out.results[0].meta).toContain('2023-05-10');
   });
 
-  test('DirectCase findByProvision je zatím odmítnut (OAuth)', async () => {
-    R().setActiveProvider('directcase');
-    await expect(R().findByProvision(89, 2012, 580)).rejects.toThrow(/OAuth|přihlášení/);
-    R().setActiveProvider('lawgpt');
-  });
 });
 
 describe('Externí rešerše — odkaz na zdroj', () => {

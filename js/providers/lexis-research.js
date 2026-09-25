@@ -3,11 +3,8 @@
  * lexis-research.js — Externí rešerše (volitelný, opt-in).
  * -----------------------------------------------------------------------------
  * Registr poskytovatelů externí právní rešerše přes jejich veřejná rozhraní.
- * Fáze 1: dva poskytovatelé
- *   • LawGPT.cz  — veřejné REST API (CORS, bez účtu, zdarma). PLNĚ FUNKČNÍ.
- *   • DirectCase — MCP + OAuth (vlastní účet uživatele). Scaffold; přihlášení
- *                  (OAuth v Electron main procesu + SafeStorage) se doplní ve
- *                  Fázi 1b, do té doby hlásí „vyžaduje přihlášení".
+ * Poskytovatel: LawGPT.cz — veřejné REST API (bez účtu, zdarma). Registr je
+ * otevřený pro další poskytovatele (přidáním objektu do PROVIDERS/PROVIDER_ORDER).
  *
  * BEZPEČNOST / SOUKROMÍ:
  *   - Vše je CLOUD → napětí s „offline/datová suverenita". Proto:
@@ -98,30 +95,11 @@
     }
   };
 
-  // ---------------------------------------------------------------------------
-  // Poskytovatel: DirectCase (MCP + OAuth) — scaffold, přihlášení ve Fázi 1b
-  // ---------------------------------------------------------------------------
-  var DirectCaseNotReady = 'DirectCase vyžaduje přihlášení vaším účtem (OAuth). '
-    + 'Toto propojení se dokončuje v další fázi — zatím prosím použijte poskytovatele LawGPT.cz.';
+  // (DirectCase scaffold odstraněn — placené předplatné, nepoužíváme. Registr zůstává
+  //  otevřený pro další poskytovatele — stačí přidat objekt do PROVIDERS a PROVIDER_ORDER.)
 
-  var DirectCase = {
-    id: 'directcase',
-    nazev: 'DirectCase',
-    typ: 'premium',
-    auth: 'oauth',
-    cloud: true,
-    ready: false,
-    popis: 'Široká ověřená databáze (~1,39 mil. zdrojů). Vyžaduje vlastní účet DirectCase (přihlášení přes OAuth).',
-    note: DirectCaseNotReady,
-    // MCP endpoint pro budoucí napojení (main proces): https://mcp.directcase.ai
-    endpoint: 'https://mcp.directcase.ai',
-    searchJudgments: function () { return Promise.reject(new Error(DirectCaseNotReady)); },
-    searchLaws: function () { return Promise.reject(new Error(DirectCaseNotReady)); },
-    searchByProvision: function () { return Promise.reject(new Error(DirectCaseNotReady)); }
-  };
-
-  var PROVIDERS = { lawgpt: LawGPT, directcase: DirectCase };
-  var PROVIDER_ORDER = ['lawgpt', 'directcase'];
+  var PROVIDERS = { lawgpt: LawGPT };
+  var PROVIDER_ORDER = ['lawgpt'];
 
   // ---------------------------------------------------------------------------
   // Stav (feature flag — NE credentials)
