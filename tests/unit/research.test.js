@@ -142,3 +142,31 @@ describe('Externí rešerše — self-mount nastavení', () => {
     expect(document.querySelectorAll('#research-settings-group')).toHaveLength(1);
   });
 });
+
+describe('Externí rešerše — by-provision a obálka odpovědi', () => {
+  test('findByProvision staví správnou URL /api/judgments/by-provision', async () => {
+    nextJson = { success: true, data: { results: [] } };
+    await R().findByProvision(89, 2012, 580);
+    expect(lastUrl).toContain('https://lawgpt.cz/api/judgments/by-provision');
+    expect(lastUrl).toContain('number=89');
+    expect(lastUrl).toContain('year=2012');
+    expect(lastUrl).toContain('paragraph=580');
+  });
+
+  test('normalizace rozbalí obálku {data:{results}} a čte reálná pole', async () => {
+    nextJson = { success: true, data: { results: [
+      { court: { code: 'NS', name: 'Nejvyšší soud' }, case_number: '29 Cdo 1/2023', decision_date: '2023-05-10', excerpt: 'text' }
+    ] } };
+    const out = await R().findCaseLaw('cokoliv');
+    expect(out.results).toHaveLength(1);
+    expect(out.results[0].title).toBe('29 Cdo 1/2023');
+    expect(out.results[0].meta).toContain('Nejvyšší soud');
+    expect(out.results[0].meta).toContain('2023-05-10');
+  });
+
+  test('DirectCase findByProvision je zatím odmítnut (OAuth)', async () => {
+    R().setActiveProvider('directcase');
+    await expect(R().findByProvision(89, 2012, 580)).rejects.toThrow(/OAuth|přihlášení/);
+    R().setActiveProvider('lawgpt');
+  });
+});

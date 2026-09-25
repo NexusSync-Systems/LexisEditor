@@ -91,6 +91,10 @@
     },
     searchLaws: function (q, limit) {
       return lawgptGet('/api/esbirka/search', { q: q, in: 'all', limit: limit || 6 });
+    },
+    // Judikáty citující konkrétní ustanovení (např. § 580 z. č. 89/2012).
+    searchByProvision: function (number, year, paragraph, limit) {
+      return lawgptGet('/api/judgments/by-provision', { number: number, year: year, paragraph: paragraph, limit: limit || 6 });
     }
   };
 
@@ -112,7 +116,8 @@
     // MCP endpoint pro budoucí napojení (main proces): https://mcp.directcase.ai
     endpoint: 'https://mcp.directcase.ai',
     searchJudgments: function () { return Promise.reject(new Error(DirectCaseNotReady)); },
-    searchLaws: function () { return Promise.reject(new Error(DirectCaseNotReady)); }
+    searchLaws: function () { return Promise.reject(new Error(DirectCaseNotReady)); },
+    searchByProvision: function () { return Promise.reject(new Error(DirectCaseNotReady)); }
   };
 
   var PROVIDERS = { lawgpt: LawGPT, directcase: DirectCase };
@@ -222,6 +227,17 @@
       var p = ensureReady();
       return Promise.resolve(p.searchLaws(String(query || '').trim(), 6)).then(function (data) {
         return { provider: p.id, providerName: p.nazev, kind: 'zakon', query: query, results: normalizeList(data) };
+      });
+    });
+  }
+  // Judikáty k paragrafu (pro Legal Linker): number/year/paragraph → seznam rozhodnutí.
+  function findByProvision(number, year, paragraph) {
+    return Promise.resolve().then(function () {
+      var p = ensureReady();
+      if (typeof p.searchByProvision !== 'function') throw new Error(p.nazev + ' neumí hledání podle ustanovení.');
+      var q = '§ ' + (paragraph || '') + ' z. č. ' + (number || '') + '/' + (year || '');
+      return Promise.resolve(p.searchByProvision(number, year, paragraph, 6)).then(function (data) {
+        return { provider: p.id, providerName: p.nazev, kind: 'ustanoveni', query: q, results: normalizeList(data) };
       });
     });
   }
@@ -504,6 +520,7 @@
     verifyCitation: verifyCitation,
     findCaseLaw: findCaseLaw,
     findLaw: findLaw,
+    findByProvision: findByProvision,
     // UI akce
     uiVerifyCitation: uiVerifyCitation,
     uiFindCaseLaw: uiFindCaseLaw,
