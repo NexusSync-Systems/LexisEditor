@@ -152,16 +152,23 @@
   function normalizeItem(it) {
     if (it == null) return { title: '', meta: '', snippet: '', url: '' };
     if (typeof it === 'string') return { title: '', meta: '', snippet: it, url: '' };
+    // LawGPT zákony vracejí pole zanořená pod it.law; judikatura je má na top-levelu.
+    var law = (it && typeof it.law === 'object' && it.law) ? it.law : null;
     var title = pick(it, ['title', 'nazev', 'name', 'heading', 'label']);
+    if (!title && law) title = pick(law, ['title', 'nazev', 'name']);
     var court = pick(it, ['court', 'soud', 'source']);
     if (court && typeof court === 'object') court = court.name || court.nazev || court.code || '';
     var spzn = pick(it, ['case_number', 'spisova_znacka', 'spisovaZnacka', 'sp_zn', 'spzn', 'jednaci_cislo', 'cislo', 'ecli']);
+    if (!spzn && law) spzn = pick(law, ['code', 'cislo', 'number']);
     var date = pick(it, ['decision_date', 'date', 'datum', 'rozhodnuti', 'decided', 'published']);
+    if (!date && law) date = pick(law, ['year', 'ucinnost', 'date']);
     var ecli = pick(it, ['ecli']);
     var url = pick(it, ['url', 'link', 'odkaz', 'href', 'source_url', 'sourceUrl']);
-    // Bez přímého odkazu poskytovatele → vyhledávací odkaz na ECLI/sp. zn. (research lead, ne deep-link).
+    if (!url && law) url = pick(law, ['url', 'odkaz', 'link']);
+    // Bez přímého odkazu poskytovatele → vyhledávací odkaz na ECLI/sp. zn./číslo předpisu.
     if (!url) { var _q = ecli || spzn; if (_q) url = 'https://www.google.com/search?q=' + encodeURIComponent('"' + _q + '"'); }
     var snippet = pick(it, ['snippet', 'text', 'excerpt', 'vyrez', 'content', 'summary', 'preview', 'fragment']);
+    if (!snippet && law) snippet = pick(law, ['text', 'excerpt', 'fragment', 'summary', 'anotace']);
     var metaParts = [court, spzn, date].filter(function (x) { return x; });
     if (!title && spzn) title = String(spzn);
     if (!title && court) title = String(court);

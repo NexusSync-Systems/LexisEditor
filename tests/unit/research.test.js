@@ -171,3 +171,15 @@ describe('Externí rešerše — odkaz na zdroj', () => {
     expect(out.results[0].url).toBe('https://example.test/rozhodnuti/1');
   });
 });
+
+describe('Externí rešerše — zákony (it.law)', () => {
+  test('normalizeItem čte zákon zanořený pod it.law', async () => {
+    nextJson = { success: true, data: { results: [
+      { type: 'law', law: { number: 89, year: 2012, code: '89/2012 Sb.', title: 'Občanský zákoník' } }
+    ] } };
+    const out = await R().findLaw('nájem');
+    expect(out.results).toHaveLength(1);
+    expect(out.results[0].title).toBe('Občanský zákoník');
+    expect(out.results[0].meta).toContain('89/2012 Sb.');
+  });
+});
