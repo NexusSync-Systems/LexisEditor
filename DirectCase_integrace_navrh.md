@@ -94,7 +94,7 @@ Sekce se jmenuje „Externí rešerše", protože DirectCase není jediný syst�
 | ASPI (Wolters Kluwer) | uzavřený portál, bez veřejného MCP | — | placené | rozsáhlé, incumbent | jen přes partnerství / jejich API |
 | CODEXIS (ATLAS) | doplněk „AI Judikatura CZ", bez veřejného MCP | — | placené | incumbent PIS | jen přes partnerství |
 | Beck-online / Beck-Noxtua (C.H. Beck) | AI produkt, bez veřejného MCP | — | placené | komentářová literatura + judikatura | jen přes partnerství |
-| Lawrence AI | MCP/API neověřeno | ? | ? | ? | ověřit |
+| Lawrence AI | bez veřejného MCP/API (ověřeno 2026-09) | účet (SaaS) | placené, ceník neveřejný | eSbírka + EU legislativa + 400 000+ soudních rozhodnutí; vše **cloud** | jen přes partnerství; **přímý konkurent** — cloud SaaS od C&P Blockchain solutions, architektura autonomního agenta s roje sub-agentů (rešerše/dokumenty/judikatura, per-role modely, citace) nápadně podobná našemu roji |
 
 Praktický dopad: **LawGPT.cz** je skvělý druhý poskytovatel — veřejný, zdarma, bez OAuth, čistě český (eSbírka + soudy + ÚS). Lze ho nabídnout jako **výchozí bezplatnou vrstvu** (funguje hned, bez účtu), zatímco DirectCase je „premium" volba pro širší a hlouběji ověřenou databázi. Oba jsou ale **cloud**, takže i pro LawGPT platí stejný opt-in a cloud marker z §3.
 
