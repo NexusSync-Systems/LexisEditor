@@ -232,3 +232,8 @@ Pozor (vývoj): dev build načítá změněné soubory (JS/HTML) až po **restar
 ne přes „Zobrazení → Načíst znovu" (to jde z cache). Po úpravě kódu aplikaci restartuj.
 
 Logo: `logo-ak.png` a `logo-dnp-legal.png` v kořeni repozitáře (čisté, průhledné PNG).
+
+## Práce z cloudu přes most k Macu (doplněno 9/2026)
+- Jest nejde spustit nad namountovanou složkou (FUSE mount rozbije resolver modulů). Logiku ověřuj čistým `node` skriptem, plnou sadu (`npm test`, `npm run test:e2e`) pusť na Macu nebo nech na CI.
+- Git příkazy, které zapisují do `.git` (commit, `git status`), z cloudu nespouštěj, zůstane `index.lock`. Commit a push dělá Zdeněk na Macu.
+- `isds.env` (přístup k datovým schránkám) je v `.gitignore`. Nikdy ho necituj ani nekopíruj.
