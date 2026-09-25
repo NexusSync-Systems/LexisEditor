@@ -61,7 +61,17 @@
         return out.map((c) => ({ citation: c, url: urlFor(c, target) }));
     }
 
-    const api = { linkifyLegalCitations, collectCitations, urlFor, CITATION_SRC, LAW_SRC };
+    // Naparsuje z citace ÚPLNÉ ustanovení pro rešerši podle §: { paragraph, number, year }
+    // nebo null (chybí § nebo zákon č. X/Y Sb.). Čistá logika, bez DOM.
+    function parseProvision(text) {
+        const s = String(text == null ? '' : text);
+        const p = s.match(/§\s*(\d+[a-z]?)/i);
+        const l = s.match(/(\d+)\/(\d+)\s*Sb\./i);
+        if (!p || !l) return null;
+        return { paragraph: p[1], number: l[1], year: l[2] };
+    }
+
+    const api = { linkifyLegalCitations, collectCitations, urlFor, parseProvision, CITATION_SRC, LAW_SRC };
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     if (typeof window !== 'undefined') window.LexisLegalLinker = api;
 })();

@@ -29,3 +29,19 @@ describe('Legal Linker — citace se linkují správně a bez hltavosti', () => 
     expect(r.changed).toBe(false);
   });
 });
+
+describe('Legal Linker — parseProvision (napojení na externí rešerši)', () => {
+  const { parseProvision } = require('../../js/core/lexis-legal-linker.js');
+
+  test('vytáhne paragraph/number/year z úplné citace', () => {
+    expect(parseProvision('§ 580 zákona č. 89/2012 Sb.')).toEqual({ paragraph: '580', number: '89', year: '2012' });
+    expect(parseProvision('podle § 2939 odst. 1 z. č. 89/2012 Sb. a násl.')).toEqual({ paragraph: '2939', number: '89', year: '2012' });
+    expect(parseProvision('§ 109 zák. č. 235/2004 Sb.')).toEqual({ paragraph: '109', number: '235', year: '2004' });
+  });
+
+  test('vrací null bez úplného ustanovení', () => {
+    expect(parseProvision('§ 580')).toBeNull();          // chybí zákon
+    expect(parseProvision('obecný text bez citace')).toBeNull();
+    expect(parseProvision('')).toBeNull();
+  });
+});

@@ -380,7 +380,8 @@
       if (!ok) return;
       var promptTxt = kind === 'citace'
         ? 'Zadejte spisovou značku nebo citaci k ověření:'
-        : (kind === 'zakon' ? 'Zadejte název zákona nebo klíčová slova:' : 'Zadejte právní otázku nebo klíčová slova:');
+        : (kind === 'zakon' ? 'Zadejte název zákona nebo klíčová slova:'
+          : (kind === 'ustanoveni' ? 'Označte/zadejte ustanovení (např. § 580 z. č. 89/2012 Sb.):' : 'Zadejte právní otázku nebo klíčová slova:'));
       var proceed = initial
         ? Promise.resolve(initial)
         : promptMsg(promptTxt, '');
@@ -392,7 +393,9 @@
           if (!p.ready) { alertMsg('⚠️ ' + esc(p.note || (p.nazev + ' není připraven.'))); return; }
           showLoading(p.nazev, kind === 'zakon' ? 'v zákonech' : 'v judikatuře');
           var call = kind === 'citace' ? verifyCitation(finalText)
-            : (kind === 'zakon' ? findLaw(finalText) : findCaseLaw(finalText));
+            : kind === 'zakon' ? findLaw(finalText)
+            : kind === 'ustanoveni' ? findByProvisionFromText(finalText)
+            : findCaseLaw(finalText);
           call.then(function (payload) { showResults(payload); })
             .catch(function (err) {
               closeResults();
@@ -404,9 +407,17 @@
     });
   }
 
+  // Z výběru naparsuje ustanovení a hledá judikáty k § (jinak fallback na fulltext judikatury).
+  function findByProvisionFromText(text) {
+    var LL = (typeof window !== 'undefined') ? window.LexisLegalLinker : null;
+    var prov = (LL && typeof LL.parseProvision === 'function') ? LL.parseProvision(text) : null;
+    if (prov && prov.number && prov.year && prov.paragraph) return findByProvision(prov.number, prov.year, prov.paragraph);
+    return findCaseLaw(text);
+  }
   function uiVerifyCitation() { runAction('citace'); }
   function uiFindCaseLaw() { runAction('judikatura'); }
   function uiFindLaw() { runAction('zakon'); }
+  function uiFindByProvision() { runAction('ustanoveni'); }
 
   // ---------------------------------------------------------------------------
   // Self-mount: sekce „Externí rešerše" do záložky Nastavení (#tab-settings)
@@ -525,6 +536,7 @@
     uiVerifyCitation: uiVerifyCitation,
     uiFindCaseLaw: uiFindCaseLaw,
     uiFindLaw: uiFindLaw,
+    uiFindByProvision: uiFindByProvision,
     // pomocné
     mountSettings: mountSettings,
     _syncSettingsUI: syncSettingsUI
@@ -533,4 +545,5 @@
   window.researchVerifyCitation = uiVerifyCitation;
   window.researchFindCaseLaw = uiFindCaseLaw;
   window.researchFindLaw = uiFindLaw;
+  window.researchFindByProvision = uiFindByProvision;
 })();
