@@ -105,7 +105,20 @@
   // Stav (feature flag — NE credentials)
   // ---------------------------------------------------------------------------
   function isEnabled() { try { return localStorage.getItem(LS_ENABLED) === '1'; } catch (e) { return false; } }
-  function setEnabled(v) { try { localStorage.setItem(LS_ENABLED, v ? '1' : '0'); } catch (e) { /* noop */ } syncSettingsUI(); }
+  // Přepínač „Externí rešerše" řídí i roj agentů na serveru (LexisLocal backend) — advokát
+  // má tak JEDEN přepínač bez sahání do .env. Best-effort; řídící stav zůstává lokální.
+  function _syncSwarmFlag(enabled) {
+    try {
+      var conn = (window.lexisUI && typeof window.lexisUI.getLexisLocalConnection === 'function')
+        ? window.lexisUI.getLexisLocalConnection() : null;
+      if (!conn || !conn.baseUrl) return; // backend nenakonfigurován → jen lokální editor stav
+      var headers = Object.assign({ 'Content-Type': 'application/json' }, conn.headers || {});
+      fetch(conn.baseUrl + '/api/settings/external-research', {
+        method: 'POST', headers: headers, body: JSON.stringify({ enabled: !!enabled })
+      }).catch(function () { /* best-effort; UI stav (localStorage) je řídící */ });
+    } catch (e) { /* noop */ }
+  }
+  function setEnabled(v) { try { localStorage.setItem(LS_ENABLED, v ? '1' : '0'); } catch (e) { /* noop */ } _syncSwarmFlag(!!v); syncSettingsUI(); }
   function activeId() {
     var id;
     try { id = localStorage.getItem(LS_PROVIDER); } catch (e) { id = null; }
