@@ -88,6 +88,7 @@ describe('Externí rešerše — LawGPT dotazy', () => {
 });
 
 describe('Externí rešerše — normalizace odpovědi (defenzivní)', () => {
+  beforeEach(() => { optIn(); });
   test('mapuje pole judikatury (soud, sp. zn., datum, url, výřez)', async () => {
     nextJson = [{
       court: 'Nejvyšší soud',
