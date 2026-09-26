@@ -3,8 +3,8 @@
 *2026-09-25 · návazně na AUDIT_reserse_2026-09.md. Stavy: [ ] TODO · [~] hotovo v kódu · [✓] nasazeno/ověřeno · [–] vědomě odloženo.*
 
 ## Fáze 1 — bezpečnost a mlčenlivost (blokuje širší distribuci)
-- [ ] **Opt-in/anonymizace do programového API rešerše.** `lexis-research.js`: `findCaseLaw/findLaw/findByProvision` musí projít `ensureOptIn()`+`maybeAnonymize()` (ne jen `runAction`). Přidat regresní test: přímé volání bez souhlasu → nefetchuje.
-- [ ] **PII guard u cloud toolu roje.** `agent_tools.js` `_lawgptJudgments`: lehký strip RČ/e-mailů/čísel účtů z `query` před odesláním, nebo tvrdá instrukce v system promptu rešeršních rolí. Test: dotaz s RČ → odchozí query bez RČ (nebo zamítnuto).
+- [~] **Opt-in/anonymizace do programového API rešerše.** HOTOVO v kódu: bezpečné obálky (safeVerifyCitation/safeFindCaseLaw/…) + regresní test bez-souhlasu-nefetchuje; ověřeno node smoke. `lexis-research.js`: `findCaseLaw/findLaw/findByProvision` musí projít `ensureOptIn()`+`maybeAnonymize()` (ne jen `runAction`). Přidat regresní test: přímé volání bez souhlasu → nefetchuje.
+- [~] **PII guard u cloud toolu roje.** HOTOVO v kódu: _stripPII (RČ/e-mail/účet/dlouhá čísla) před odesláním, nezasahuje právní citace ani IČO; +test, 27/27 jest. `agent_tools.js` `_lawgptJudgments`: lehký strip RČ/e-mailů/čísel účtů z `query` před odesláním, nebo tvrdá instrukce v system promptu rešeršních rolí. Test: dotaz s RČ → odchozí query bez RČ (nebo zamítnuto).
 - [~] **Gating cloud egressu** (flag + local-only, dvojitá brána) — hotovo, 25/25 testů.
 
 ## Fáze 2 — integrita a spolehlivost

@@ -25,6 +25,7 @@ beforeEach(() => {
 });
 
 const R = () => window.LexisResearch;
+function optIn() { try { localStorage.setItem('lexis_research_enabled', '1'); localStorage.setItem('lexis_research_optin_ack', '1'); } catch (e) { /* noop */ } }
 
 describe('Externí rešerše — stav a registr', () => {
   test('modul se exportuje na window.LexisResearch', () => {
@@ -55,6 +56,7 @@ describe('Externí rešerše — stav a registr', () => {
 });
 
 describe('Externí rešerše — LawGPT dotazy', () => {
+  beforeEach(() => { optIn(); });
   test('findCaseLaw staví správnou URL judikatury', async () => {
     nextJson = [];
     await R().findCaseLaw('neplatnost smlouvy');
@@ -131,6 +133,7 @@ describe('Externí rešerše — self-mount nastavení', () => {
 });
 
 describe('Externí rešerše — by-provision a obálka odpovědi', () => {
+  beforeEach(() => { optIn(); });
   test('findByProvision staví správnou URL /api/judgments/by-provision', async () => {
     nextJson = { success: true, data: { results: [] } };
     await R().findByProvision(89, 2012, 580);
@@ -154,6 +157,7 @@ describe('Externí rešerše — by-provision a obálka odpovědi', () => {
 });
 
 describe('Externí rešerše — odkaz na zdroj', () => {
+  beforeEach(() => { optIn(); });
   test('normalizeItem doplní vyhledávací url z ECLI, když poskytovatel odkaz nedá', async () => {
     nextJson = { success: true, data: { results: [
       { ecli: 'ECLI:CZ:NS:2023:29.Cdo.1.2023', case_number: '29 Cdo 1/2023', court: { name: 'Nejvyšší soud' }, excerpt: 't' }
@@ -173,6 +177,7 @@ describe('Externí rešerše — odkaz na zdroj', () => {
 });
 
 describe('Externí rešerše — zákony (it.law)', () => {
+  beforeEach(() => { optIn(); });
   test('normalizeItem čte zákon zanořený pod it.law', async () => {
     nextJson = { success: true, data: { results: [
       { type: 'law', law: { number: 89, year: 2012, code: '89/2012 Sb.', title: 'Občanský zákoník' } }
@@ -181,5 +186,20 @@ describe('Externí rešerše — zákony (it.law)', () => {
     expect(out.results).toHaveLength(1);
     expect(out.results[0].title).toBe('Občanský zákoník');
     expect(out.results[0].meta).toContain('89/2012 Sb.');
+  });
+});
+
+describe('Externí rešerše — souhlas (mlčenlivost)', () => {
+  test('programové findCaseLaw bez souhlasu NEfetchuje a odmítne', async () => {
+    try { localStorage.clear(); } catch (e) { /* noop */ }   // žádný opt-in
+    global.fetch.mockClear();
+    await expect(R().findCaseLaw('citlivý dotaz')).rejects.toThrow(/souhlas/i);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+  test('po opt-inu programové findCaseLaw funguje', async () => {
+    optIn();
+    nextJson = { success: true, data: { results: [{ case_number: '1 As 2/2020', court: { name: 'NSS' }, excerpt: 't' }] } };
+    const out = await R().findCaseLaw('dotaz');
+    expect(out.results).toHaveLength(1);
   });
 });

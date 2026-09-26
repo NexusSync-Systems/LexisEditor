@@ -507,6 +507,19 @@
   // ---------------------------------------------------------------------------
   // Export
   // ---------------------------------------------------------------------------
+  // Programové (externí) API MUSÍ projít souhlasem + nabídkou anonymizace — na rozdíl od UI
+  // runAction, kde se to řeší dřív. Brání cloud egressu bez souhlasu (viz audit 2026-09, nález 1).
+  function _consent() {
+    return ensureOptIn().then(function (ok) {
+      if (!ok) throw new Error('Externí rešerše vyžaduje souhlas s odesláním dotazu do cloudu.');
+      return true;
+    });
+  }
+  function safeVerifyCitation(text) { return _consent().then(function () { return maybeAnonymize(String(text || '')); }).then(function (t) { return verifyCitation(t); }); }
+  function safeFindCaseLaw(query) { return _consent().then(function () { return maybeAnonymize(String(query || '')); }).then(function (t) { return findCaseLaw(t); }); }
+  function safeFindLaw(query) { return _consent().then(function () { return maybeAnonymize(String(query || '')); }).then(function (t) { return findLaw(t); }); }
+  function safeFindByProvision(number, year, paragraph) { return _consent().then(function () { return findByProvision(number, year, paragraph); }); }
+
   window.LexisResearch = {
     PROVIDERS: PROVIDERS,
     PROVIDER_ORDER: PROVIDER_ORDER,
@@ -516,10 +529,10 @@
     setActiveProvider: setActiveProvider,
     activeProvider: activeProvider,
     // programové API
-    verifyCitation: verifyCitation,
-    findCaseLaw: findCaseLaw,
-    findLaw: findLaw,
-    findByProvision: findByProvision,
+    verifyCitation: safeVerifyCitation,
+    findCaseLaw: safeFindCaseLaw,
+    findLaw: safeFindLaw,
+    findByProvision: safeFindByProvision,
     // UI akce
     uiVerifyCitation: uiVerifyCitation,
     uiFindCaseLaw: uiFindCaseLaw,
