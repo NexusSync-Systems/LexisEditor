@@ -111,3 +111,17 @@ test('schválený koncept: tlačítko uložení vypnuté', async () => {
     const btn = document.querySelector('#ll-draft-bar button');
     expect(btn.disabled).toBe(true);
 });
+
+test('koncept mezitím schválený (409 approved) → lišta přepne na jen pro čtení', async () => {
+    const { ui } = setup({
+        'GET /api/drafts/drf_1/editor-spec': [200, { id: 'drf_1', version: 1, status: 'koncept', lexisSpec: { title: 'Výzva', blocks: [] } }],
+        'PUT /api/drafts/drf_1': [409, { error: 'Koncept je schválený.', code: 'approved' }]
+    });
+    await ui.openLLDraft('drf_1');
+    await ui.saveToLLDraft();
+    expect(ui.llDraftLink.status).toBe('schvaleno');
+    const btn = document.querySelector('#ll-draft-bar button');
+    expect(btn.disabled).toBe(true);
+    expect(btn.textContent).toMatch(/jen pro čtení/);
+    expect(ui.alerts.pop()).toMatch(/mezitím schválen/);
+});

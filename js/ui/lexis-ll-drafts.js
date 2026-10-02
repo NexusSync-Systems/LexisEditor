@@ -138,6 +138,11 @@
                         this.renderLLDraftBar();
                         this.customAlert('Uloženo jako nový koncept „' + window.escapeHTML(c.title) + '“.');
                     } catch (e2) { this.customAlert('Uložení se nezdařilo: ' + window.escapeHTML(e2.message)); }
+                } else if (e.status === 409 && code === 'approved') {
+                    // Koncept mezitím někdo schválil → lišta přepne na „jen pro čtení“.
+                    l.status = 'schvaleno';
+                    this.renderLLDraftBar();
+                    this.customAlert('Koncept byl mezitím schválen a je jen pro čtení. Vaše úprava zůstává v editoru — uložte ji jako nový dokument, nebo nechte koncept v LexisLocalu vrátit do stavu Koncept.');
                 } else {
                     this.customAlert('Uložení do LexisLocalu se nezdařilo: ' + window.escapeHTML(e.message));
                 }
