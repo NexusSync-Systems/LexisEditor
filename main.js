@@ -1085,7 +1085,11 @@ ipcMain.handle('sign-pdf', async (event, payload) => {
 
         let signed;
         try {
-            signed = await signPdfBuffer(pdfBuffer, p12Buffer, password || '', meta || {});
+            // Volitelně časové razítko z TSA (RFC 3161) a viditelný podpisový blok.
+            signed = await signPdfBuffer(pdfBuffer, p12Buffer, password || '', meta || {}, {
+                tsaUrl: payload.tsaUrl ? String(payload.tsaUrl) : null,
+                visible: payload.visible !== false
+            });
         } catch (e) {
             // Nejčastěji špatné heslo k .p12 nebo poškozený certifikát.
             return { success: false, error: `Podpis selhal: ${e.message} (zkontrolujte heslo k certifikátu).` };
@@ -1106,6 +1110,49 @@ ipcMain.handle('sign-pdf', async (event, payload) => {
     } finally {
         if (printWindow && !printWindow.isDestroyed()) printWindow.destroy();
     }
+});
+
+// Podpis HOTOVÉHO PDF (příloha, dokument od klienta) — vybere se soubor, podepíše
+// a uloží jako *_podepsano.pdf. Zašifrované nebo už podepsané PDF modul odmítne.
+ipcMain.handle('sign-existing-pdf', async (event, payload) => {
+    payload = payload || {};
+    let pades;
+    try { pades = require('./js/core/pades-sign'); }
+    catch (e) { return { success: false, error: 'Podpisové závislosti nejsou nainstalované. Spusťte `npm install`.' }; }
+    if (!payload.p12Path) return { success: false, error: 'Chybí cesta k certifikátu (.p12/.pfx).' };
+    try {
+        const pick = await dialog.showOpenDialog(mainWindow, { title: 'Vyberte PDF k podpisu', properties: ['openFile'], filters: [{ name: 'PDF', extensions: ['pdf'] }] });
+        if (pick.canceled || !pick.filePaths || !pick.filePaths.length) return { success: false, canceled: true };
+        const src = pick.filePaths[0];
+        let p12Buffer;
+        try { p12Buffer = fs.readFileSync(payload.p12Path); } catch (e) { return { success: false, error: `Nelze načíst certifikát: ${e.message}` }; }
+        let signed;
+        try {
+            signed = await pades.signExistingPdf(src, p12Buffer, payload.password || '', payload.meta || {}, {
+                tsaUrl: payload.tsaUrl ? String(payload.tsaUrl) : null, visible: payload.visible !== false
+            });
+        } catch (e) { return { success: false, error: `Podpis selhal: ${e.message}` }; }
+        const out = await dialog.showSaveDialog(mainWindow, { title: 'Uložit podepsané PDF', defaultPath: path.join(path.dirname(src), pades.signedName(src)), filters: [{ name: 'PDF', extensions: ['pdf'] }] });
+        if (out.canceled || !out.filePath) return { success: false, canceled: true };
+        fs.writeFileSync(out.filePath, signed);
+        return { success: true, filePath: out.filePath };
+    } catch (e) { return { success: false, error: e.message }; }
+});
+
+// Ověření elektronických podpisů v PDF (integrita, podepisující, razítko, kvalifikovaný
+// certifikát). Důvěryhodnost vystavitele vůči EU Trusted List se offline neověřuje.
+ipcMain.handle('verify-pdf-signatures', async () => {
+    try {
+        // Cestu vybírá VŽDY uživatel v dialogu — renderer nesmí určit libovolný soubor.
+        let p = null;
+        {
+            const pick = await dialog.showOpenDialog(mainWindow, { title: 'Vyberte podepsané PDF', properties: ['openFile'], filters: [{ name: 'PDF', extensions: ['pdf'] }] });
+            if (pick.canceled || !pick.filePaths || !pick.filePaths.length) return { success: false, canceled: true };
+            p = pick.filePaths[0];
+        }
+        const { verifyPdfSignatures } = require('./js/core/pdf-signature');
+        return Object.assign({ success: true, fileName: path.basename(p) }, verifyPdfSignatures(fs.readFileSync(p)));
+    } catch (e) { return { success: false, error: e.message }; }
 });
 
 // --- ISDS BRIDGE (Datové schránky) ---

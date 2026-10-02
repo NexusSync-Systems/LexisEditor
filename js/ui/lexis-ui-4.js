@@ -1,5 +1,5 @@
 // lexis-ui-4.js — část UI vytažená z lexis-ui.js (prototype-mixin, beze změny chování).
-// Načítá se v index.html PO lexis-ui.js. Obsahuje: goToStartScreen, proceedToStartScreen, renderRecentDocuments, fetchInbox, parseTestDocument, markInboxRead, prepareReply, insertAresData, filterRecentDocs, openRecentDocument, deleteRecentDocument, updateDeadlineBadge, showDeadlineInfo, convertCitationsToLinks, cleanDocumentForOfficialSubmission, updateDocumentOutline, scanTextForDeadlines, promptAddDeadline, promptAddDeadlineDate, renderDeadlines, removeActiveDeadline, signDigital, showProfileModal, insertTOC, insertTitlePage, insertIllustration, insertBookmark, insertPageNumber, showDeadlineCalc, insertSignatureBlock, insertMySignature, insertArticle, insertParagraph, insertCitation
+// Načítá se v index.html PO lexis-ui.js. Obsahuje: goToStartScreen, proceedToStartScreen, renderRecentDocuments, fetchInbox, parseTestDocument, markInboxRead, prepareReply, insertAresData, filterRecentDocs, openRecentDocument, deleteRecentDocument, updateDeadlineBadge, showDeadlineInfo, convertCitationsToLinks, cleanDocumentForOfficialSubmission, updateDocumentOutline, scanTextForDeadlines, promptAddDeadline, promptAddDeadlineDate, renderDeadlines, removeActiveDeadline, signDigital, verifyPdfSignature, renderSignatureReport, showProfileModal, insertTOC, insertTitlePage, insertIllustration, insertBookmark, insertPageNumber, showDeadlineCalc, insertSignatureBlock, insertMySignature, insertArticle, insertParagraph, insertCitation
 Object.assign(LexisUI.prototype, {
 
     async goToStartScreen() {
@@ -1181,110 +1181,213 @@ Object.assign(LexisUI.prototype, {
 
     async signDigital() {
         this.checkEnterpriseFeature("Elektronický podpis PDF (PAdES)", async () => {
+            const esc = (v) => window.escapeHTML(String(v == null ? '' : v));
+            const st = this.core.storage;
+            const saved = (await st.get('settings', 'sign-options')) || {};
+            const visibleOn = saved.visible !== false;
+            const tsaMode = saved.tsaMode || 'none';      // none | freetsa | custom
+            const tsaCustom = saved.tsaUrl || '';
+            const FREETSA = 'https://freetsa.org/tsr';
+
             const overlay = document.createElement('div');
             overlay.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);";
-            
             const modal = document.createElement('div');
-            modal.style = "background:#fff;padding:30px;border-radius:16px;width:450px;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);font-family:'Inter',sans-serif;border:1px solid #e0dbd3;";
-            
+            modal.style = "background:#fff;padding:26px;border-radius:16px;width:500px;max-height:92vh;overflow:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,0.5);font-family:'Inter',sans-serif;border:1px solid #e0dbd3;box-sizing:border-box;";
+            const lbl = "display:block; font-size:11px; font-weight:600; color:#5c574f; margin-bottom:4px;";
+            const inp = "width:100%; padding:8px 10px; border:1px solid #ddd6cb; border-radius:6px; font-size:12px; box-sizing:border-box;";
+            const btn2 = "padding:9px; border:1px solid #ddd6cb; border-radius:8px; cursor:pointer; font-weight:600; font-size:12px; color:#5c574f; background:#faf9f7;";
+
             modal.innerHTML = eIco(`
-                <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+                <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
                     <div style="font-size:32px;">🔑</div>
                     <div>
                         <div style="font-weight:800; font-size:18px; color:var(--word-blue);">Elektronický podpis PDF</div>
-                        <div style="font-size:12px; color:#77716a;">Podepsání advokátním certifikátem</div>
+                        <div style="font-size:12px; color:#77716a;">Podepsání advokátním certifikátem, ověření podpisu</div>
                     </div>
                 </div>
-                
-                <div style="background:#faf5ff; border:1px solid #e9d5ff; padding:15px; border-radius:8px; margin-bottom:20px; font-size:12px; line-height:1.4; color:#7e22ce;">
-                    <strong>Zaručený elektronický podpis (PAdES) certifikátem v souboru .p12/.pfx.</strong><br>
-                    Dokument se uloží jako PDF a kryptograficky podepíše; platnost ověříte v Adobe Acrobatu.<br>
-                    • S <b>kvalifikovaným certifikátem</b> (např. PostSignum, I.CA, eIdentity) jde o <b>uznávaný</b> el. podpis (§ 6 z. č. 297/2016 Sb.).<br>
-                    • <b>Kvalifikovaný</b> podpis (QES) vyžaduje klíč na čipu/tokenu — to tato funkce zatím neumí.<br>
-                    • Podání z datové schránky advokáta podpis nepotřebuje.
+
+                <div style="background:#faf5ff; border:1px solid #e9d5ff; padding:12px 14px; border-radius:8px; margin-bottom:16px; font-size:12px; line-height:1.45; color:#7e22ce;">
+                    <strong>Zaručený elektronický podpis (PAdES) certifikátem .p12/.pfx.</strong><br>
+                    • S <b>kvalifikovaným certifikátem</b> (PostSignum, I.CA, eIdentity) jde o <b>uznávaný</b> podpis (§ 6 z. č. 297/2016 Sb.).<br>
+                    • <b>Kvalifikovaný</b> podpis (QES) vyžaduje klíč na čipu/tokenu — to zatím neumíme.<br>
+                    • Podání z datové schránky advokáta podpis nepotřebuje.<br>
+                    • Ověřit lze zdarma v Adobe Acrobat Readeru nebo tlačítkem „Ověřit podpis PDF…“ níže.
                 </div>
-                
-                <div style="margin-bottom:12px;">
-                    <label style="display:block; font-size:11px; font-weight:600; color:#5c574f; margin-bottom:4px;">Advokátní certifikát (.pfx / .p12)</label>
+
+                <div style="margin-bottom:10px;">
+                    <label style="${lbl}">Advokátní certifikát (.pfx / .p12)</label>
                     <div style="display:flex; gap:8px;">
-                        <input id="isds-cert-path" type="text" style="flex:1; padding:8px; border:1px solid #ddd6cb; border-radius:6px; font-size:12px; background:#faf9f7;" readonly placeholder="Vyberte soubor certifikátu...">
+                        <input id="isds-cert-path" type="text" style="${inp} flex:1; background:#faf9f7;" readonly placeholder="Vyberte soubor certifikátu...">
                         <button id="isds-cert-browse" style="padding:8px 12px; background:#e0dbd3; border:1px solid #ddd6cb; border-radius:6px; font-size:12px; cursor:pointer; font-weight:600; color:#5c574f;">Procházet</button>
                     </div>
                 </div>
-                
-                <div style="margin-bottom:20px;">
-                    <label style="display:block; font-size:11px; font-weight:600; color:#5c574f; margin-bottom:4px;">Heslo / PIN k certifikátu</label>
-                    <input id="isds-cert-pin" type="password" style="width:100%; padding:8px 12px; border:1px solid #ddd6cb; border-radius:6px; font-size:13px;" placeholder="Zadejte PIN k soukromému klíči">
+
+                <div style="margin-bottom:12px;">
+                    <label style="${lbl}">Heslo / PIN k certifikátu</label>
+                    <input id="isds-cert-pin" type="password" autocomplete="off" style="${inp}" placeholder="Heslo k souboru certifikátu (neukládá se)">
                 </div>
-                
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:20px;">
+
+                <div style="margin-bottom:10px;">
+                    <label style="display:flex; align-items:center; gap:8px; font-size:12px; color:#3b3833; cursor:pointer;">
+                        <input id="sign-visible" type="checkbox" ${visibleOn ? 'checked' : ''}>
+                        Viditelný podpisový blok na poslední straně (jméno, datum)
+                    </label>
+                </div>
+
+                <div style="margin-bottom:14px;">
+                    <label style="${lbl}">Časové razítko (doloží čas podpisu; podpis jde ověřit i po vypršení certifikátu)</label>
+                    <select id="sign-tsa-mode" style="${inp}">
+                        <option value="none" ${tsaMode === 'none' ? 'selected' : ''}>Bez časového razítka</option>
+                        <option value="custom" ${tsaMode === 'custom' ? 'selected' : ''}>Kvalifikované razítko — adresa služby (PostSignum, I.CA, …)</option>
+                        <option value="freetsa" ${tsaMode === 'freetsa' ? 'selected' : ''}>FreeTSA — jen pro vyzkoušení, NENÍ kvalifikované</option>
+                    </select>
+                    <input id="sign-tsa-url" type="text" style="${inp} margin-top:6px; ${tsaMode === 'custom' ? '' : 'display:none;'}" placeholder="https://… (adresa TSA od poskytovatele)" value="${esc(tsaCustom)}">
+                    <div id="sign-tsa-note" style="font-size:11px; color:#77716a; margin-top:4px; ${tsaMode === 'custom' ? '' : 'display:none;'}">Přihlašovací údaje lze zadat v adrese (https://jmeno:heslo@…); ukládají se jen v tomto počítači. Při podpisu se poskytovateli posílá pouze otisk (hash) podpisu, ne dokument.</div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                     <button id="isds-sign-cancel" style="padding:10px; border:1px solid #ddd6cb; border-radius:8px; cursor:pointer; font-weight:600; font-size:13px; color:#5c574f; background:white;">Zrušit</button>
-                    <button id="isds-sign-confirm" style="padding:10px; background:#5a8a4a; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700; font-size:13px;">Podepsat a Exportovat</button>
+                    <button id="isds-sign-confirm" style="padding:10px; background:#5a8a4a; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700; font-size:13px;">Podepsat tento dokument</button>
+                </div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-top:10px;">
+                    <button id="sign-existing" style="${btn2}" title="Podepíše hotové PDF ze souboru (např. přílohu nebo dokument od klienta)">📄 Podepsat PDF ze souboru…</button>
+                    <button id="sign-verify" style="${btn2}" title="Zkontroluje elektronické podpisy v PDF">🔍 Ověřit podpis PDF…</button>
                 </div>
             `);
-            
+
             overlay.appendChild(modal);
             document.body.appendChild(overlay);
-            
+            const $ = (id) => document.getElementById(id);
+            const close = () => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); };
+
             let selectedCertPath = '';
-            
-            document.getElementById('isds-sign-cancel').onclick = () => document.body.removeChild(overlay);
-            
-            document.getElementById('isds-cert-browse').onclick = () => {
-                // Výběr přes main proces — vrací PLNOU cestu k souboru. Dřív se brala jen
-                // fi.files[0].name (holý název) → main certifikát nenašel a podpis vždy selhal.
+            $('isds-sign-cancel').onclick = close;
+
+            $('sign-tsa-mode').onchange = () => {
+                const custom = $('sign-tsa-mode').value === 'custom';
+                $('sign-tsa-url').style.display = custom ? '' : 'none';
+                $('sign-tsa-note').style.display = custom ? '' : 'none';
+            };
+
+            $('isds-cert-browse').onclick = () => {
+                // Výběr přes main proces — vrací PLNOU cestu k souboru.
                 if (window.electronAPI && window.electronAPI.pickCertificate) {
                     window.electronAPI.pickCertificate().then((r) => {
-                        if (r && r.path) { selectedCertPath = r.path; document.getElementById('isds-cert-path').value = r.path.split(/[\\/]/).pop(); }
-                        else if (r && r.error) { this.customAlert('❌ Výběr certifikátu selhal: ' + window.escapeHTML(r.error)); }
+                        if (r && r.path) { selectedCertPath = r.path; $('isds-cert-path').value = r.path.split(/[\\/]/).pop(); }
+                        else if (r && r.error) { this.customAlert('❌ Výběr certifikátu selhal: ' + esc(r.error)); }
                     });
                 } else {
                     this.customAlert('Podpis certifikátem je dostupný jen v desktopové verzi.');
                 }
             };
-            
-            document.getElementById('isds-sign-confirm').onclick = async () => {
-                const pin = document.getElementById('isds-cert-pin').value;
-                
-                if (!selectedCertPath) { this.customAlert('Nejdřív vyberte soubor certifikátu (.p12/.pfx).'); return; }
-                
-                                if (!(window.electronAPI && window.electronAPI.signPdf)) {
-                    return this.customAlert("Reálný podpis PDF je dostupný jen v desktopové verzi.");
-                }
-                const _btn = document.getElementById('isds-sign-confirm');
-                _btn.innerText = "Podepisuji..."; _btn.disabled = true;
 
-                const savedName = await this.core.storage.get('settings', 'lawyer-name') || "";
+            // Společné volby podpisu (+ uložení voleb bez hesla)
+            const readOptions = async () => {
+                const mode = $('sign-tsa-mode').value;
+                const url = $('sign-tsa-url').value.trim();
+                if (mode === 'custom' && !/^https?:\/\//i.test(url)) {
+                    this.customAlert('Zadejte adresu služby časového razítka (začíná https://), nebo zvolte „Bez časového razítka“.');
+                    return null;
+                }
+                const visible = $('sign-visible').checked;
+                try { await st.set('settings', { key: 'sign-options', value: { visible, tsaMode: mode, tsaUrl: mode === 'custom' ? url : (saved.tsaUrl || '') } }); } catch (e) { /* jen pohodlí */ }
+                const savedName = await st.get('settings', 'lawyer-name') || "";
+                return {
+                    p12Path: selectedCertPath, password: $('isds-cert-pin').value, visible,
+                    tsaUrl: mode === 'custom' ? url : mode === 'freetsa' ? FREETSA : null,
+                    meta: { name: savedName, reason: 'Podpis dokumentu advokátem', location: '' }
+                };
+            };
+            const needCert = () => {
+                if (!(window.electronAPI && window.electronAPI.signPdf)) { this.customAlert("Reálný podpis PDF je dostupný jen v desktopové verzi."); return false; }
+                if (!selectedCertPath) { this.customAlert('Nejdřív vyberte soubor certifikátu (.p12/.pfx).'); return false; }
+                return true;
+            };
+            const done = (res, opts) => {
+                if (res && res.success) {
+                    close();
+                    const ts = opts.tsaUrl ? (opts.tsaUrl === FREETSA
+                        ? '<br>Obsahuje časové razítko FreeTSA (není kvalifikované — jen pro vyzkoušení).'
+                        : '<br>Obsahuje časové razítko.') : '<br>Bez časového razítka.';
+                    this.customAlert("✅ <b>PDF bylo elektronicky podepsáno</b> a uloženo:<br><code>" + esc(res.filePath) + "</code>" + ts +
+                        "<br><br>Platnost ověříte tlačítkem „Ověřit podpis PDF…“ nebo v Adobe Acrobat Readeru (panel Podpisy).");
+                    return true;
+                }
+                if (!(res && res.canceled)) this.customAlert("❌ Podpis se nezdařil: " + esc((res && res.error) || 'neznámá chyba'));
+                return false;
+            };
+
+            $('isds-sign-confirm').onclick = async () => {
+                if (!needCert()) return;
+                const opts = await readOptions(); if (!opts) return;
+                const b = $('isds-sign-confirm');
+                b.innerText = opts.tsaUrl ? "Podepisuji, žádám o razítko…" : "Podepisuji..."; b.disabled = true;
+
                 let _css = '';
                 try { for (const sh of document.styleSheets) { try { for (const r of sh.cssRules) _css += r.cssText + String.fromCharCode(10); } catch (e) {} } } catch (e) {}
                 const _html = (this.core.getContent ? this.core.getContent() : ((document.querySelector('.ql-editor') || {}).innerHTML)) || '';
-                const _h = document.getElementById('header-area');
-                const _f = document.getElementById('footer-area');
-                const _wm = document.getElementById('watermark-layer');
-                const _payload = {
+                const _h = $('header-area'), _f = $('footer-area'), _wm = $('watermark-layer');
+                const payload = Object.assign({
                     htmlContent: _html, cssContent: _css,
-                    headerHtml: _h ? _h.innerHTML : '',
-                    footerHtml: _f ? _f.innerHTML : '',
-                    watermarkHtml: _wm ? _wm.innerHTML : '',
-                    p12Path: selectedCertPath, password: pin,
-                    meta: { name: savedName, reason: 'Podpis dokumentu advokatem', location: '' }
-                };
-                let _res;
-                try { _res = await window.electronAPI.signPdf(_payload); }
-                catch (e) { _res = { success: false, error: e.message }; }
-
-                _btn.innerText = "Podepsat a Exportovat"; _btn.disabled = false;
-                if (_res && _res.success) {
-                    this.setDocumentStatus('final', true);
-                    document.body.removeChild(overlay);
-                    this.customAlert("✅ <b>PDF bylo kryptograficky podepsano</b> Vasim certifikatem a ulozeno:<br><code>" + window.escapeHTML(_res.filePath) + "</code><br><br>Platnost overite v Adobe Acrobatu (panel Podpisy). Podpis je platny, pokud se certifikat retezi k duveryhodne autorite.");
-                } else if (_res && _res.canceled) {
-                    /* zruseno */
-                } else {
-                    this.customAlert("❌ Podpis se nezdaril: " + window.escapeHTML((_res && _res.error) || 'neznama chyba'));
-                }
+                    headerHtml: _h ? _h.innerHTML : '', footerHtml: _f ? _f.innerHTML : '', watermarkHtml: _wm ? _wm.innerHTML : ''
+                }, opts);
+                let res;
+                try { res = await window.electronAPI.signPdf(payload); } catch (e) { res = { success: false, error: e.message }; }
+                if (document.body.contains(b)) { b.innerText = "Podepsat tento dokument"; b.disabled = false; }
+                if (done(res, opts)) this.setDocumentStatus('final', true);
             };
+
+            $('sign-existing').onclick = async () => {
+                if (!needCert()) return;
+                if (!window.electronAPI.signExistingPdf) return this.customAlert('Tato verze aplikace podpis hotového PDF neumí — aktualizujte ji.');
+                const opts = await readOptions(); if (!opts) return;
+                const b = $('sign-existing'); b.disabled = true;
+                let res;
+                try { res = await window.electronAPI.signExistingPdf(opts); } catch (e) { res = { success: false, error: e.message }; }
+                if (document.body.contains(b)) b.disabled = false;
+                done(res, opts);
+            };
+
+            $('sign-verify').onclick = () => this.verifyPdfSignature();
         });
+    },
+
+    /** Ověření elektronických podpisů ve vybraném PDF (bez certifikátu, i mimo Enterprise). */
+    async verifyPdfSignature() {
+        if (!(window.electronAPI && window.electronAPI.verifyPdfSignatures)) {
+            return this.customAlert('Ověření podpisu PDF je dostupné jen v desktopové verzi.');
+        }
+        let r;
+        try { r = await window.electronAPI.verifyPdfSignatures(); } catch (e) { r = { success: false, error: e.message }; }
+        if (r && r.canceled) return;
+        if (!r || !r.success) return this.customAlert('❌ Ověření se nezdařilo: ' + window.escapeHTML((r && r.error) || 'neznámá chyba'));
+        this.customAlert(this.renderSignatureReport(r));
+    },
+
+    /** HTML zpráva o podpisech (vše escapované — data pocházejí z cizího PDF). */
+    renderSignatureReport(r) {
+        const esc = (v) => window.escapeHTML(String(v == null ? '' : v));
+        const fmt = (iso) => { try { return iso ? new Date(iso).toLocaleString('cs-CZ', { timeZone: 'Europe/Prague' }) : '—'; } catch (e) { return esc(iso); } };
+        let h = '<div style="text-align:left; font-size:13px; line-height:1.45;">';
+        h += '<b>' + esc(r.fileName || 'PDF') + '</b><br>' + esc(r.summary || '');
+        (r.signatures || []).forEach((s) => {
+            const ok = !!s.valid;
+            h += '<div style="margin-top:10px; padding:10px; border-radius:8px; border:1px solid ' + (ok ? '#b7d7a8' : '#f2b8b5') + '; background:' + (ok ? '#f3f9f0' : '#fdf1f0') + ';">';
+            h += (ok ? '✅' : '❌') + ' <b>Podpis č. ' + esc(s.index) + ':</b> ' + esc(s.level || (ok ? 'platný' : 'neplatný')) + '<br>';
+            if (s.signer) {
+                h += 'Podepsal(a): <b>' + esc(s.signer.name) + '</b><br>';
+                h += '<span style="font-size:11px; color:#5c574f;">Vydavatel: ' + esc(s.signer.issuer) + '<br>Certifikát platný ' + fmt(s.signer.validFrom) + ' – ' + fmt(s.signer.validTo) + '</span><br>';
+            }
+            h += 'Čas podpisu: ' + fmt(s.signingTime);
+            if (s.timestamp && s.timestamp.present) {
+                h += '<br>Časové razítko: ' + (s.timestamp.valid ? '✅ ' + fmt(s.timestamp.time) : '❌ neplatné') + (s.timestamp.tsa ? ' <span style="font-size:11px;color:#5c574f;">(' + esc(s.timestamp.tsa) + ')</span>' : '');
+            }
+            if (s.integrity === false) h += '<br><b style="color:#b3261e;">Dokument byl po podpisu změněn.</b>';
+            (s.warnings || []).forEach((w) => { h += '<br><span style="color:#8a5a00;">⚠️ ' + esc(w) + '</span>'; });
+            h += '</div>';
+        });
+        h += '<div style="margin-top:10px; font-size:11px; color:#77716a;">Kontroluje se integrita, podpis, certifikát a razítko. Zda je vydavatel na důvěryhodném seznamu EU, ověřte v Adobe Acrobat Readeru.</div></div>';
+        return h;
     },
 
     showProfileModal() {

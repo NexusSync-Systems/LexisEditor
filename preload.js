@@ -44,6 +44,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     pickCertificate: () => ipcRenderer.invoke('pick-certificate'),
     readDocxSpec: (filePath) => ipcRenderer.invoke('read-docx-spec', filePath),
     signPdf: (payload) => ipcRenderer.invoke('sign-pdf', payload),
+    signExistingPdf: (payload) => ipcRenderer.invoke('sign-existing-pdf', payload),
+    verifyPdfSignatures: () => ipcRenderer.invoke('verify-pdf-signatures'),
     isdsInboxList: () => ipcRenderer.invoke('isds-inbox-list'),
     isdsInboxDownload: (dmID) => ipcRenderer.invoke('isds-inbox-download', dmID),
     isdsInboxOpenFile: (filePath) => ipcRenderer.invoke('isds-inbox-open-file', filePath),
