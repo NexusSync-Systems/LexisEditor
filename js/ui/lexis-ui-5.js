@@ -365,6 +365,10 @@ Object.assign(LexisUI.prototype, {
             };
             
             if (detectedCourt.kod.startsWith('OS')) {
+                // Jako oficiální web InfoJednání: u okresního soudu i nadřízený krajský/městský
+                // soud (druhOrganizace). Kraj = znaky 3–5 kódu (OSJIMJI → KSJIMBM).
+                const NADRIZENY = { JIM: 'KSJIMBM', JIC: 'KSJICCB', VYC: 'KSVYCHK', SEM: 'KSSEMOS', ZPC: 'KSZPCPM', STC: 'KSSTCAB', SCE: 'KSSCEUL', PHA: 'MSPHAAB' };
+                queryParams.druhOrganizace = NADRIZENY[detectedCourt.kod.slice(2, 5)] || null;
                 queryParams.okresniSoud = detectedCourt.kod;
             } else {
                 queryParams.druhOrganizace = detectedCourt.kod;
@@ -381,7 +385,9 @@ Object.assign(LexisUI.prototype, {
                             const room = u.jednaciSin || 'Neznámá síň';
                             const type = u.druhJednani || 'Soudní jednání';
                             const judge = u.resitel || 'Neuveden';
-                            const isCancelled = u.jednaciZruseno === 'Ano' || u.jednaciZruseno === true;
+                            // Oficiální pole je „jednaniZruseno“ (dřív se četlo jen „jednaciZruseno“ → zrušení se nezobrazilo).
+                            const zr = u.jednaniZruseno != null ? u.jednaniZruseno : u.jednaciZruseno;
+                            const isCancelled = zr === 'Ano' || zr === true;
                             
                             const statusPill = isCancelled 
                                 ? `<span style="background: #f0dcd6; color: #8a3626; border: 1px solid #e0a99d; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px; display: inline-block;">❌ ZRUŠENO</span>`
