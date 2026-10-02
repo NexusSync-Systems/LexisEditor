@@ -68,10 +68,25 @@
                 });
                 section.style.display = 'block';
                 if (head) head.style.display = '';
+                this.showLLIdentity();
             } catch (e) {
                 section.style.display = 'none';
                 if (head) head.style.display = 'none';
             }
+        },
+
+        // Pod kým je editor spárovaný (uživatel kanceláře vs. sdílený hlavní účet).
+        async showLLIdentity() {
+            const sub = document.querySelector('#ll-drafts-head .sub');
+            if (!sub) return;
+            try {
+                const me = await llFetch(this, '/api/me');
+                this.llMe = me;
+                sub.textContent = me.sharedIdentity
+                    ? 'sdílené v LexisLocalu · sdílený účet (úpravy jako „Místní uživatel“)'
+                    : ('sdílené v LexisLocalu · jako ' + me.name + (me.roleLabel ? ' (' + me.roleLabel + ')' : ''));
+                sub.title = me.sharedIdentity ? 'Požádejte správce LexisLocalu o vlastní účet — pak bude v historii vidět vaše jméno.' : (me.device ? 'Zařízení: ' + me.device : '');
+            } catch (e) { /* starší server bez /api/me — nic neměníme */ }
         },
 
         async openLLDraft(id) {

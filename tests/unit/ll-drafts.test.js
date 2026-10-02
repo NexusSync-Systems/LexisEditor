@@ -19,7 +19,7 @@ beforeAll(() => {
 
 function setup(routes) {
     document.body.innerHTML = '<div id="start-screen"></div><div id="app-container" style="display:none"></div>' +
-        '<div id="ll-drafts-head" style="display:none"></div><div id="ll-drafts-section" style="display:none"><div id="ll-drafts-list"></div></div>';
+        '<div id="ll-drafts-head" style="display:none"><span class="sub">sdílené v LexisLocalu</span></div><div id="ll-drafts-section" style="display:none"><div id="ll-drafts-list"></div></div>';
     const calls = [];
     global.fetch = jest.fn(async (url, opts) => {
         calls.push({ url, opts });
@@ -124,4 +124,23 @@ test('koncept mezitím schválený (409 approved) → lišta přepne na jen pro 
     expect(btn.disabled).toBe(true);
     expect(btn.textContent).toMatch(/jen pro čtení/);
     expect(ui.alerts.pop()).toMatch(/mezitím schválen/);
+});
+
+test('hlavička konceptů ukáže, pod kým je editor spárovaný (escapováno přes textContent)', async () => {
+    const { ui } = setup({
+        'GET /api/drafts': [200, { drafts: [] }],
+        'GET /api/me': [200, { name: 'Mgr. <b>Karel</b>', roleLabel: 'Koncipient', sharedIdentity: false, device: 'LexisEditor' }]
+    });
+    await ui.fetchLLDrafts();
+    await new Promise(r => setTimeout(r, 0));
+    const sub = document.querySelector('#ll-drafts-head .sub');
+    expect(sub.textContent).toBe('sdílené v LexisLocalu · jako Mgr. <b>Karel</b> (Koncipient)');
+    expect(sub.querySelector('b')).toBeNull();
+});
+
+test('sdílený hlavní účet → upozornění v hlavičce', async () => {
+    const { ui } = setup({ 'GET /api/drafts': [200, { drafts: [] }], 'GET /api/me': [200, { name: 'Místní uživatel', sharedIdentity: true }] });
+    await ui.fetchLLDrafts();
+    await new Promise(r => setTimeout(r, 0));
+    expect(document.querySelector('#ll-drafts-head .sub').textContent).toMatch(/sdílený účet/);
 });
