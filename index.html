@@ -1884,7 +1884,10 @@
             var txt = document.getElementById('ll-status-text');
             if (!dot || !txt) return;
             var ctrl = new AbortController();
-            var timer = setTimeout(function () { ctrl.abort(); }, 2500);
+            // Vzdálený (spárovaný) server může odpovídat pomaleji než localhost → delší limit.
+            var paired = null;
+            try { if (window.electronAPI && window.electronAPI.lexisLocalPairStatus) paired = await window.electronAPI.lexisLocalPairStatus(); } catch (e) { paired = null; }
+            var timer = setTimeout(function () { ctrl.abort(); }, paired && paired.paired ? 10000 : 2500);
             var up = false;
             try {
                 // Jakákoli HTTP odpověď (i 401/404) = server běží. Chyba sítě = neběží.
@@ -1892,14 +1895,16 @@
                 up = true;
             } catch (e) { up = false; }
             clearTimeout(timer);
-            if (up === lastState) return; // neblikej, když se nic nezměnilo
-            lastState = up;
+            var remote = paired && paired.paired ? String(paired.serverUrl || '').replace(/^https?:\/\//, '') : '';
+            var state = (up ? 'up' : 'down') + '|' + remote;
+            if (state === lastState) return; // neblikej, když se nic nezměnilo
+            lastState = state;
             if (up) {
                 dot.style.background = 'var(--green)';
-                txt.textContent = 'LexisLocal běží lokálně';
+                txt.textContent = remote ? ('Spárováno se serverem LexisLocal · ' + remote) : 'LexisLocal běží lokálně';
             } else {
-                dot.style.background = 'var(--text-faint)';
-                txt.textContent = 'LexisLocal nepřipojen · jen lokálně';
+                dot.style.background = remote ? 'var(--accent, #c8860a)' : 'var(--text-faint)';
+                txt.textContent = remote ? ('Server LexisLocal nedostupný · ' + remote) : 'LexisLocal nepřipojen · jen lokálně';
             }
         }
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', check);

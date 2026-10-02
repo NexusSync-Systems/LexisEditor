@@ -83,8 +83,12 @@
                     const appContainer = document.getElementById('app-container');
                     if (startScreen && appContainer) { startScreen.style.display = 'none'; appContainer.style.display = 'flex'; }
                     this.currentDocumentId = 'doc_' + Date.now();
-                    window.applyDocumentSpec(r.lexisSpec);
-                    this.currentDocumentTitle = (r.lexisSpec && r.lexisSpec.title) || 'Koncept';
+                    // spec.title by editor vykreslil jako tučný řádek navíc → po uložení zdvojený titulek.
+                    const spec = Object.assign({}, r.lexisSpec || {});
+                    const title = r.title || spec.title || 'Koncept';
+                    delete spec.title;
+                    window.applyDocumentSpec(spec);
+                    this.currentDocumentTitle = title;
                     if (this.updateDocTitleDOM) this.updateDocTitleDOM();
                     if (this.setDocumentStatus) this.setDocumentStatus(null, true);
                     if (this.saveActiveDocumentState) await this.saveActiveDocumentState();

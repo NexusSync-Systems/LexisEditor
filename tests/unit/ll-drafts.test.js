@@ -65,7 +65,8 @@ test('otevření a uložení zpět jako nová verze (baseVersion)', async () => 
         'PUT /api/drafts/drf_1': [200, { version: 4, status: 'ke_kontrole' }]
     });
     await ui.openLLDraft('drf_1');
-    expect(window.applied.title).toBe('Žaloba');
+    expect(window.applied.title).toBeUndefined(); // název se nevykresluje do textu (jinak zdvojený titulek)
+    expect(ui.currentDocumentTitle).toBe('Žaloba');
     expect(document.getElementById('ll-draft-bar').textContent).toContain('v3');
     await ui.saveToLLDraft();
     const put = calls.find(c => c.opts && c.opts.method === 'PUT');

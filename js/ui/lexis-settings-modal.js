@@ -49,6 +49,7 @@
       +   card(I_AI, 'Umělá inteligence',
             row('Poskytovatel', 'Model běžící na tomto počítači', '<span style="flex:none;font:600 13px var(--font-ui);color:var(--ink);background:var(--surface-2);border:1px solid var(--border-strong);border-radius:8px;padding:8px 12px;">' + provLabel + '</span>')
             + row('Pokročilé nastavení AI', 'Model, endpoint, agenti', btn('set-ai-adv', 'Otevřít'))
+            + row('Server LexisLocal v kanceláři', 'Spárovat odkazem z dashboardu (ověří otisk klíče serveru)', btn('set-pair', '🔐 Spárovat'))
             + aiNote)
       +   card(I_DS, 'Datová schránka',
             row('Připojení schránky', 'Přihlášení pro odesílání podání', btn('set-isds', 'Nastavit'))
@@ -70,6 +71,7 @@
     const wire = (s, fn, close) => { const el = $(s); if (el) el.onclick = () => { if (close) ov.remove(); try { fn(); } catch (e) {} }; };
     wire('#set-security', () => { if (window.lockScreen) window.lockScreen.openSecuritySettings(); }, true);
     wire('#set-ai-adv', () => { if (window.switchTab) window.switchTab('tab-settings'); }, true);
+    wire('#set-pair', () => { if (window.lexisPairServer) window.lexisPairServer(); }, true);
     wire('#set-isds', () => { if (window.openIsdsSettings) window.openIsdsSettings(); }, false);
     wire('#set-datovky', () => { if (window.openDatovkaDialog) window.openDatovkaDialog(); }, true);
     wire('#set-keybackup', () => { if (window.openKeyBackup) window.openKeyBackup(); }, false);
