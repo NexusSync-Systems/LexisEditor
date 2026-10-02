@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' http://localhost:* http://127.0.0.1:* https://localhost:* https://ares.gov.cz https://*.mojedatovaschranka.cz https://isir.justice.cz https://adisrws.mfcr.cz https://api.github.com https://*.githubusercontent.com; object-src 'none'; base-uri 'none'; form-action 'self'">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' data: blob:; connect-src 'self' lexisll: http://localhost:* http://127.0.0.1:* https://localhost:* https://ares.gov.cz https://*.mojedatovaschranka.cz https://isir.justice.cz https://adisrws.mfcr.cz https://api.github.com https://*.githubusercontent.com; object-src 'none'; base-uri 'none'; form-action 'self'">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LexisEditor</title>
 
@@ -788,6 +788,10 @@
                         <span>Záložní AI:</span>
                         <input type="checkbox" id="ai-offline-fallback" checked onchange="saveAISettings()" style="width:16px; height:16px; cursor:pointer;">
                     </div>
+                    <div style="display:flex; flex-direction:column; gap:4px; font-size:11px; align-items:center; justify-content:center;">
+                        <span>Server:</span>
+                        <button type="button" class="combo-box" onclick="window.lexisPairServer && window.lexisPairServer()" title="Spárovat editor se serverem LexisLocal v kanceláři (odkaz s otiskem klíče z dashboardu)" style="cursor:pointer;">🔐 Spárovat</button>
+                    </div>
                 </div>
                 <div class="group-label">Připojení</div>
             </div>
@@ -1342,6 +1346,7 @@
     <script src="js/ui/lexis-mail-client.js"></script>
 
     <script src="js/ui/lexis-settings-modal.js"></script>
+    <script src="js/ui/lexis-pairing.js"></script>
     <script src="js/react-islands.js"></script>
     <script>
       // Pilotní režim: jen lokální AI (ochrana advokátní mlčenlivosti). Pro plné vydání přepnout na false.

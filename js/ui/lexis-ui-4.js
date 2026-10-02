@@ -1180,7 +1180,7 @@ Object.assign(LexisUI.prototype, {
     },
 
     async signDigital() {
-        this.checkEnterpriseFeature("Podpisová doložka (vizuální)", async () => {
+        this.checkEnterpriseFeature("Elektronický podpis PDF (PAdES)", async () => {
             const overlay = document.createElement('div');
             overlay.style = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);";
             
@@ -1197,8 +1197,11 @@ Object.assign(LexisUI.prototype, {
                 </div>
                 
                 <div style="background:#faf5ff; border:1px solid #e9d5ff; padding:15px; border-radius:8px; margin-bottom:20px; font-size:12px; line-height:1.4; color:#7e22ce;">
-                    <strong>⚠️ Vizuální podpisová doložka — NEJDE o kvalifikovaný e-podpis.</strong><br>
-                    Vloží na konec dokumentu podpisovou doložku advokáta. Dokument NENÍ kryptograficky podepsán podle eIDAS a doložka se NEOVĚŘÍ v Adobe Acrobatu. Skutečný elektronický podpis (PAdES) s certifikátem je v přípravě.
+                    <strong>Zaručený elektronický podpis (PAdES) certifikátem v souboru .p12/.pfx.</strong><br>
+                    Dokument se uloží jako PDF a kryptograficky podepíše; platnost ověříte v Adobe Acrobatu.<br>
+                    • S <b>kvalifikovaným certifikátem</b> (např. PostSignum, I.CA, eIdentity) jde o <b>uznávaný</b> el. podpis (§ 6 z. č. 297/2016 Sb.).<br>
+                    • <b>Kvalifikovaný</b> podpis (QES) vyžaduje klíč na čipu/tokenu — to tato funkce zatím neumí.<br>
+                    • Podání z datové schránky advokáta podpis nepotřebuje.
                 </div>
                 
                 <div style="margin-bottom:12px;">
@@ -1228,16 +1231,22 @@ Object.assign(LexisUI.prototype, {
             document.getElementById('isds-sign-cancel').onclick = () => document.body.removeChild(overlay);
             
             document.getElementById('isds-cert-browse').onclick = () => {
-                // Skutečný výběr souboru; certifikát se ZATÍM k podpisu nepoužívá (PAdES v přípravě).
-                const fi = document.createElement('input'); fi.type = 'file'; fi.accept = '.pfx,.p12';
-                fi.onchange = () => { if (fi.files && fi.files[0]) { selectedCertPath = fi.files[0].name; document.getElementById('isds-cert-path').value = fi.files[0].name; } };
-                fi.click();
+                // Výběr přes main proces — vrací PLNOU cestu k souboru. Dřív se brala jen
+                // fi.files[0].name (holý název) → main certifikát nenašel a podpis vždy selhal.
+                if (window.electronAPI && window.electronAPI.pickCertificate) {
+                    window.electronAPI.pickCertificate().then((r) => {
+                        if (r && r.path) { selectedCertPath = r.path; document.getElementById('isds-cert-path').value = r.path.split(/[\\/]/).pop(); }
+                        else if (r && r.error) { this.customAlert('❌ Výběr certifikátu selhal: ' + window.escapeHTML(r.error)); }
+                    });
+                } else {
+                    this.customAlert('Podpis certifikátem je dostupný jen v desktopové verzi.');
+                }
             };
             
             document.getElementById('isds-sign-confirm').onclick = async () => {
                 const pin = document.getElementById('isds-cert-pin').value;
                 
-                // Poznámka: certifikát ani PIN se u vizuální doložky nepoužívají (PAdES v přípravě).
+                if (!selectedCertPath) { this.customAlert('Nejdřív vyberte soubor certifikátu (.p12/.pfx).'); return; }
                 
                                 if (!(window.electronAPI && window.electronAPI.signPdf)) {
                     return this.customAlert("Reálný podpis PDF je dostupný jen v desktopové verzi.");

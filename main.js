@@ -1,4 +1,12 @@
-const { app, BrowserWindow, ipcMain, dialog, safeStorage, systemPreferences, shell, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, safeStorage, systemPreferences, shell, Menu, protocol } = require('electron');
+
+// Vzdálený LexisLocal: okno editoru volá lexisll://server/api/… a main proces požadavek
+// předá na spárovaný server přes TLS ověřené otiskem klíče (js/core/lexis-server-pin.js).
+// Token tak zůstává v main procesu a CSP okna nemusí povolovat libovolné https adresy.
+// Registrace schématu musí proběhnout PŘED app ready.
+try {
+    protocol.registerSchemesAsPrivileged([{ scheme: 'lexisll', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
+} catch (e) { /* starší Electron / testy */ }
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -10,6 +18,7 @@ const forge = require('node-forge');
 const crypto = require('crypto');
 const lexisLinkSec = require('./js/core/lexis-link-security.js');
 const lexisLock = require('./js/core/lexis-lock.js');
+const serverPin = require('./js/core/lexis-server-pin.js'); // párování se vzdáleným LexisLocal (otisk klíče)
 const lexisZfo = require('./js/core/lexis-zfo.js');
 const isdsClient = require('./js/core/isds-client.js');
 const isdsTransport = require('./js/core/isds-transport.js');
@@ -348,6 +357,7 @@ app.whenReady().then(() => {
         app.setAboutPanelOptions({ applicationName: 'LexisEditor', applicationVersion: app.getVersion(), copyright: 'LexisEditor' });
     } catch (e) {}
     try { buildAppMenu(); } catch (e) {}
+    installLexisLocalProxy(); // lexisll:// → spárovaný server (ověřený otiskem klíče)
     createWindow();
     try {
         if (!pendingOpenPath) {
@@ -461,6 +471,74 @@ ipcMain.handle('get-version', () => {
 // API token LexisLocal backendu čteme přímo z lokálního souboru (~/.lexislocal/api_token,
 // resp. LEXIS_KEY_DIR) — editor běží na stejném stroji jako backend, takže token
 // nemusí uživatel nikam vkládat. Sync varianta pro synchronní čtení v preloadu.
+// ─── Spárovaný VZDÁLENÝ server LexisLocal (otisk klíče, ne slepá důvěra) ─────
+// Server v kanceláři má self-signed certifikát. Při spárování (odkaz z dashboardu
+// LexisLocal → js/core/lexis-server-pin.js) si uložíme otisk jeho veřejného klíče,
+// certifikát a token (šifrovaně přes safeStorage). Okno editoru pak volá
+// lexisll://server/api/… a main proces požadavek předá jen serveru s tímto klíčem.
+const serverPairPath = path.join(app.getPath('userData'), 'lexislocal_server.json');
+function readServerPairing() {
+    try {
+        const p = JSON.parse(fs.readFileSync(serverPairPath, 'utf-8'));
+        return p && p.host && p.pin ? p : null;
+    } catch (e) { return null; }
+}
+function writeServerPairing(rec) {
+    fs.writeFileSync(serverPairPath, JSON.stringify(rec, null, 2), { encoding: 'utf-8', mode: 0o600 });
+}
+function pairedConnection() {
+    const p = readServerPairing();
+    if (!p) return null;
+    let token = '';
+    try { token = safeStorage.decryptString(Buffer.from(p.tokenEnc, 'base64')); } catch (e) { token = ''; }
+    return { host: p.host, port: p.port, pin: p.pin, pem: p.pem, token };
+}
+function installLexisLocalProxy() {
+    try {
+        protocol.handle('lexisll', async (request) => {
+            const conn = pairedConnection();
+            if (!conn) return new Response(JSON.stringify({ error: 'Editor není spárovaný se serverem LexisLocal.' }), { status: 502, headers: { 'Content-Type': 'application/json' } });
+            try {
+                const u = new URL(request.url);
+                const method = request.method || 'GET';
+                const body = (method === 'GET' || method === 'HEAD') ? undefined : Buffer.from(await request.arrayBuffer());
+                const headers = {};
+                const ct = request.headers.get('content-type'); if (ct) headers['Content-Type'] = ct;
+                const r = await serverPin.pairedRequest(conn, { method, path: u.pathname + u.search, headers, body }, {}, (pem) => {
+                    const rec = readServerPairing(); if (rec) { rec.pem = pem; writeServerPairing(rec); }
+                });
+                const outHeaders = {};
+                if (r.headers && r.headers['content-type']) outHeaders['Content-Type'] = r.headers['content-type'];
+                if (r.headers && r.headers['content-disposition']) outHeaders['Content-Disposition'] = r.headers['content-disposition'];
+                return new Response(r.buffer, { status: r.status, headers: outHeaders });
+            } catch (e) {
+                const mismatch = e && e.code === 'PIN_MISMATCH';
+                return new Response(JSON.stringify({ error: mismatch ? 'Klíč serveru LexisLocal se změnil — spárujte editor znovu (Nastavení → Spárovat server).' : ('Server LexisLocal není dostupný: ' + e.message) }),
+                    { status: mismatch ? 495 : 502, headers: { 'Content-Type': 'application/json' } });
+            }
+        });
+    } catch (e) { console.warn('Proxy na vzdálený LexisLocal se nepodařilo zapnout:', e.message); }
+}
+ipcMain.handle('lexislocal-pair', async (event, link) => {
+    try {
+        ensureSafeStorage(); // token ukládáme jen šifrovaně (Keychain/DPAPI)
+        const r = await serverPin.pairWithServer(link);
+        writeServerPairing({ host: r.host, port: r.port, baseUrl: r.baseUrl, pin: r.pin, pem: r.pem, pairedAt: new Date().toISOString(),
+            tokenEnc: safeStorage.encryptString(r.token).toString('base64') });
+        return { success: true, baseUrl: 'lexisll://server', serverUrl: r.baseUrl, pinShort: serverPin.shortPin(r.pin) };
+    } catch (e) {
+        return { success: false, error: e.message, code: e.code || null };
+    }
+});
+ipcMain.handle('lexislocal-pair-status', () => {
+    const p = readServerPairing();
+    return p ? { paired: true, baseUrl: 'lexisll://server', serverUrl: p.baseUrl, pinShort: serverPin.shortPin(p.pin), pairedAt: p.pairedAt } : { paired: false };
+});
+ipcMain.handle('lexislocal-unpair', () => {
+    try { if (fs.existsSync(serverPairPath)) fs.writeFileSync(serverPairPath, 'null'); } catch (e) { return { success: false, error: e.message }; }
+    return { success: true };
+});
+
 function readLexisLocalToken() {
     try {
         const dir = process.env.LEXIS_KEY_DIR || path.join(os.homedir(), '.lexislocal');

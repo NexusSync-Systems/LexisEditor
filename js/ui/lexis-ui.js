@@ -1262,7 +1262,7 @@ class LexisUI {
             'autoLinkLaws': 'Automaticky převést odkazy na zákony na hypertextové odkazy.',
             'openISDS': 'Odeslat dokument přímo přes integrovanou datovou schránku.',
             'openPostDialog': 'Odeslat dokument jako fyzický dopis přes službu České pošty (Dopis Online).',
-            'signDigital': 'Vložit vizuální podpisovou doložku (POZOR: nejde o kvalifikovaný e-podpis; PAdES v přípravě).',
+            'signDigital': 'Podepsat dokument jako PDF certifikátem .p12/.pfx (PAdES). S kvalifikovaným certifikátem = uznávaný podpis; kvalifikovaný (QES) z čipu zatím ne.',
             'logTime': 'Zapsat čas strávený na tomto dokumentu do výkazu.',
             'exportTimesheet': 'Exportovat časový výkaz prací (timesheet).',
             'setMargins(\'normal\')': 'Nastavit standardní okraje stránky.',
