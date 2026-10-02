@@ -156,6 +156,14 @@
                         <div style="font-size: 12px; color: var(--text-faint); padding: 16px 2px;">Žádné nové spisy ke zpracování.</div>
                     </div>
                 </div>
+
+                <div id="ll-drafts-head" class="start-inbox-head" style="display: none;">
+                    Koncepty <span class="sub">sdílené v LexisLocalu</span>
+                    <button class="start-inbox-refresh" onclick="window.lexisUI.fetchLLDrafts()" title="Načíst koncepty z LexisLocalu">Načíst</button>
+                </div>
+                <div id="ll-drafts-section" class="start-inbox" style="display: none;">
+                    <div id="ll-drafts-list"></div>
+                </div>
                 </div>
             </main>
         </div>
@@ -1325,6 +1333,7 @@
     <script src="js/ui/lexis-ui-2.js"></script>
     <script src="js/ui/lexis-ui-3.js"></script>
     <script src="js/ui/lexis-ui-4.js"></script>
+    <script src="js/ui/lexis-ll-drafts.js"></script>
     <script src="js/ui/lexis-ui-5.js"></script>
     <script src="js/ui/lexis-ui-6.js"></script>
     <script src="js/ui/lexis-dialogs.js"></script>
