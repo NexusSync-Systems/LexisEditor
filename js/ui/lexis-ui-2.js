@@ -511,6 +511,10 @@ Object.assign(LexisUI.prototype, {
     },
 
     async checkEnterpriseFeature(featureName, callback) {
+        // DOČASNĚ: licenční klíče zatím nejde vydávat (3. 10. 2026), takže tyto funkce
+        // jsou dostupné všem. Až bude vydávání licencí hotové, seznam se vyprázdní.
+        const UNLOCKED_UNTIL_LICENSING = ['Elektronický podpis PDF (PAdES)'];
+        if (UNLOCKED_UNTIL_LICENSING.includes(featureName)) { callback(); return; }
         const status = await this.core.secureVault.get('license_status') || 'Neaktivní';
         if (status === 'Enterprise') {
             callback();
