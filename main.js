@@ -1,5 +1,13 @@
 const { app, BrowserWindow, ipcMain, dialog, safeStorage, systemPreferences, shell, Menu, protocol } = require('electron');
 
+// macOS: Chromium hledá NÁVRHY oprav pravopisu (NSSpellChecker) v jazyce aplikace. Podtrhávání
+// chyb jede přes automatickou detekci jazyka, ale návrhy se bez tohoto hledaly v angličtině →
+// u českých slov „Žádné návrhy oprav“ (ověřeno 3. 10. 2026; TextEdit české návrhy nabízí).
+// LEXIS_UI_LANG umožní jazyk přebít (např. 'en' pro testy).
+if (process.platform === 'darwin') {
+    try { app.commandLine.appendSwitch('lang', process.env.LEXIS_UI_LANG || 'cs'); } catch (e) { /* nekritické */ }
+}
+
 // Vzdálený LexisLocal: okno editoru volá lexisll://server/api/… a main proces požadavek
 // předá na spárovaný server přes TLS ověřené otiskem klíče (js/core/lexis-server-pin.js).
 // Token tak zůstává v main procesu a CSP okna nemusí povolovat libovolné https adresy.
