@@ -268,7 +268,9 @@ class LexisUI {
         }
 
         editorEl.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
+            // ŽÁDNÉ e.preventDefault(): Electron při zrušené výchozí akci nevyšle událost
+            // 'context-menu' do main procesu → nedorazí chybné slovo ani návrhy oprav
+            // (ověřeno 3. 10. 2026 na macOS). Electron sám žádné nativní menu neukazuje.
             // Zachyť výběr HNED — Chromium při pravém kliknutí na chybné slovo označí
             // celé slovo; klik do našeho HTML menu by DOM výběr shodil, proto si Quill
             // rozsah uložíme teď a opravu pak provedeme přes Quill (viz _applySpellFix).
