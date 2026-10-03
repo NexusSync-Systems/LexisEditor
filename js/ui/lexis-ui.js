@@ -343,7 +343,26 @@ class LexisUI {
         const esc = (s) => (window.escapeHTML ? window.escapeHTML(String(s)) : String(s));
         const hide = () => { menu.style.display = 'none'; this._clearSpellItems(menu); };
         const frag = document.createDocumentFragment();
-        const suggestions = Array.isArray(ctx.suggestions) ? ctx.suggestions.slice(0, 6) : [];
+        let suggestions = Array.isArray(ctx.suggestions) ? ctx.suggestions.slice(0, 6) : [];
+        const api = window.electronAPI;
+        const isMac = api.spellcheckPlatform === 'darwin';
+        // macOS: context-menu nese prázdné návrhy a webFrame radí anglicky → jednou se
+        // zeptat systému (NSSpellChecker, čeština) a menu po odpovědi překreslit.
+        if (!suggestions.length && isMac && typeof api.spellcheckSuggestNative === 'function' && !ctx._nativeAsked) {
+            ctx._nativeAsked = true; ctx._nativePending = true;
+            Promise.resolve(api.spellcheckSuggestNative(word)).then((list) => {
+                ctx._nativePending = false;
+                if (this._spellCtx !== ctx) return;
+                if (!Array.isArray(list) || !list.length) { if (menu.style.display === 'block') this._renderSpellItems(menu); return; }
+                ctx.suggestions = list.filter(x => typeof x === 'string' && x).slice(0, 6);
+                if (menu.style.display === 'block') this._renderSpellItems(menu);
+            }).catch(() => { ctx._nativePending = false; });
+        }
+        // Jinde (Windows/Linux) lze doplnit návrhy přímo ze stránky (hunspell dle jazyka).
+        if (!suggestions.length && !isMac && typeof api.spellcheckSuggest === 'function') {
+            try { suggestions = (api.spellcheckSuggest(word) || []).filter(x => typeof x === 'string' && x).slice(0, 6); }
+            catch (e) { suggestions = []; }
+        }
 
         if (suggestions.length) {
             suggestions.forEach(sugg => {
@@ -358,7 +377,7 @@ class LexisUI {
             none.className = 'context-menu-item lexis-spell-item';
             none.style.opacity = '0.6';
             none.style.cursor = 'default';
-            none.innerHTML = `<span class="icon">🔤</span> Žádné návrhy oprav`;
+            none.innerHTML = ctx._nativePending ? `<span class="icon">🔤</span> Hledám návrhy…` : `<span class="icon">🔤</span> Žádné návrhy oprav`;
             frag.appendChild(none);
         }
         // Přidat do slovníku (aby se slovo příště nehlásilo jako chyba).

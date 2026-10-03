@@ -1,13 +1,5 @@
 const { app, BrowserWindow, ipcMain, dialog, safeStorage, systemPreferences, shell, Menu, protocol } = require('electron');
 
-// macOS: Chromium hledá NÁVRHY oprav pravopisu (NSSpellChecker) v jazyce aplikace. Podtrhávání
-// chyb jede přes automatickou detekci jazyka, ale návrhy se bez tohoto hledaly v angličtině →
-// u českých slov „Žádné návrhy oprav“ (ověřeno 3. 10. 2026; TextEdit české návrhy nabízí).
-// LEXIS_UI_LANG umožní jazyk přebít (např. 'en' pro testy).
-if (process.platform === 'darwin') {
-    try { app.commandLine.appendSwitch('lang', process.env.LEXIS_UI_LANG || 'cs'); } catch (e) { /* nekritické */ }
-}
-
 // Vzdálený LexisLocal: okno editoru volá lexisll://server/api/… a main proces požadavek
 // předá na spárovaný server přes TLS ověřené otiskem klíče (js/core/lexis-server-pin.js).
 // Token tak zůstává v main procesu a CSP okna nemusí povolovat libovolné https adresy.
@@ -725,6 +717,41 @@ ipcMain.handle('spellcheck-set-enabled', (event, enabled) => {
         const on = typeof ses.isSpellCheckerEnabled === 'function' ? ses.isSpellCheckerEnabled() : !!enabled;
         return { success: true, enabled: on };
     } catch (e) { return { success: false, error: e.message }; }
+});
+// Návrhy oprav z macOS NSSpellChecker v ČEŠTINĚ. Electron na macOS posílá v context-menu
+// prázdné dictionarySuggestions a webFrame.getWordSuggestions vrací anglické návrhy
+// (ověřeno 3. 10. 2026: „houze" → house, „shcválně" → nic). JXA přes osascript; slovo jde
+// jako argv (žádná interpolace do skriptu), časový limit, malá cache.
+const _spellSuggestCache = new Map();
+const _SPELL_JXA = [
+    "ObjC.import('AppKit');",
+    "function run(argv) {",
+    "  var w = argv[0] || ''; var lang = argv[1] || 'cs';",
+    "  var sc = $.NSSpellChecker.sharedSpellChecker;",
+    "  var ns = $(w);",
+    "  var g = sc.guessesForWordRangeInStringLanguageInSpellDocumentWithTag($.NSMakeRange(0, ns.length), ns, lang, 0);",
+    "  return JSON.stringify(ObjC.deepUnwrap(g) || []);",
+    "}"
+].join('\n');
+ipcMain.handle('spellcheck-suggest-native', async (event, word, lang) => {
+    const w = String(word == null ? '' : word).trim();
+    const l = /^[a-z]{2}(_[A-Z]{2})?$/.test(String(lang || '')) ? String(lang) : 'cs';
+    if (process.platform !== 'darwin' || !w || w.length > 64 || /\s/.test(w)) return [];
+    const key = l + '|' + w;
+    if (_spellSuggestCache.has(key)) return _spellSuggestCache.get(key);
+    const { execFile } = require('child_process');
+    const out = await new Promise((resolve) => {
+        execFile('/usr/bin/osascript', ['-l', 'JavaScript', '-e', _SPELL_JXA, w, l], { timeout: 3000 }, (err, stdout) => {
+            if (err) return resolve([]);
+            try {
+                const arr = JSON.parse(String(stdout || '').trim() || '[]');
+                resolve(Array.isArray(arr) ? arr.filter(x => typeof x === 'string' && x).slice(0, 6) : []);
+            } catch (e) { resolve([]); }
+        });
+    });
+    if (_spellSuggestCache.size > 300) _spellSuggestCache.clear();
+    _spellSuggestCache.set(key, out);
+    return out;
 });
 ipcMain.handle('spellcheck-status', (event) => {
     try {

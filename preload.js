@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webFrame } = require('electron');
 
 // Zpřístupnění specifických systémových funkcí pro frontend (index.html)
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -96,4 +96,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     spellcheckAddWord: (word) => ipcRenderer.invoke('spellcheck-add-word', word),
     spellcheckSetEnabled: (enabled) => ipcRenderer.invoke('spellcheck-set-enabled', enabled),
     spellcheckStatus: () => ipcRenderer.invoke('spellcheck-status'),
+    // Záložní zdroj návrhů oprav: na macOS chodí v události context-menu prázdné
+    // dictionarySuggestions (ověřeno 3. 10. 2026), i když systém české návrhy má.
+    // macOS: české návrhy z NSSpellChecker (async, přes main). Jinde vrací [].
+    spellcheckSuggestNative: (word) => ipcRenderer.invoke('spellcheck-suggest-native', String(word || ''), 'cs'),
+    spellcheckPlatform: process.platform,
+    spellcheckSuggest: (word) => {
+        try { return (webFrame && webFrame.getWordSuggestions) ? webFrame.getWordSuggestions(String(word || '')).slice(0, 6) : []; }
+        catch (e) { return []; }
+    },
 });
