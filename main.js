@@ -745,7 +745,10 @@ ipcMain.handle('spellcheck-suggest-native', async (event, word, lang) => {
             if (err) return resolve([]);
             try {
                 const arr = JSON.parse(String(stdout || '').trim() || '[]');
-                resolve(Array.isArray(arr) ? arr.filter(x => typeof x === 'string' && x).slice(0, 6) : []);
+                // macOS vrací i rozložené tvary (NFD) → sjednotit na NFC a odstranit duplicity.
+                const seen = new Set();
+                resolve(Array.isArray(arr) ? arr.filter(x => typeof x === 'string' && x).map(x => x.normalize('NFC'))
+                    .filter(x => x !== w.normalize('NFC') && !seen.has(x) && seen.add(x)).slice(0, 6) : []);
             } catch (e) { resolve([]); }
         });
     });

@@ -354,7 +354,7 @@ class LexisUI {
                 ctx._nativePending = false;
                 if (this._spellCtx !== ctx) return;
                 if (!Array.isArray(list) || !list.length) { if (menu.style.display === 'block') this._renderSpellItems(menu); return; }
-                ctx.suggestions = list.filter(x => typeof x === 'string' && x).slice(0, 6);
+                ctx.suggestions = [...new Set(list.filter(x => typeof x === 'string' && x).map(x => x.normalize('NFC')))].slice(0, 6);
                 if (menu.style.display === 'block') this._renderSpellItems(menu);
             }).catch(() => { ctx._nativePending = false; });
         }
